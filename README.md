@@ -8,17 +8,35 @@ The official webpage of our paper:
 
 <div id="top" align="center">
 <p align="center">
-<img src="assets/teaser.gif" width="1000px" >
+<img src="assets/figure_teaser.png" width="1000px" >
+</p>
+</div>
+
+## 🕹️ Video Demos
+
+
+
+
+## 🔥 Highlights
+
+**MTGS** manages to leverage multi-traversal data for scene reconstruction with better geometry.
+
+<div id="top" align="center">
+<p align="center">
+<img src="assets/figure_pipeline.png" width="1000px" >
 </p>
 </div>
 
 
-## News
+## 📢 News
+
+- **[YY/MM/DD]** TODO.
 
 
 ## 📋 TODO List
 
 - [ ] Official code release.
+- [ ] More visualizations in different roadblocks.
 
 ## ⭐ Citation
 
