@@ -14,8 +14,19 @@ The official webpage of our paper:
 
 ## 🕹️ Video Demos
 
+Roadblock 331220_4690660_331190_4690710 in `nuplan`.
 
+Rendered results on training traversals.
 
+https://github.com/user-attachments/assets/8548e307-1669-4968-aeba-1cb63851478b
+
+https://github.com/user-attachments/assets/b7cd65b5-3470-4a0d-9f13-c3f7a1dd05c4
+
+https://github.com/user-attachments/assets/235ea9b3-6419-424d-b04f-97f25faebf6c
+
+Rendered results on the testing traversal.
+
+https://github.com/user-attachments/assets/073458fe-0806-4b3c-9645-129cc066b6d1
 
 ## 🔥 Highlights
 
