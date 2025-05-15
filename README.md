@@ -54,15 +54,11 @@ https://github.com/user-attachments/assets/073458fe-0806-4b3c-9645-129cc066b6d1
 If any parts of our paper and code help your research, please consider citing us and giving a star to our repository.
 
 ```bibtex
-
-@inproceedings{li2025mtgs,
-      title={MTGS: Multi-Traversal Gaussian Splatting}, 
-      author={Tianyu Li and Yihang Qiu and Zhenhua Wu and Carl Lindström and Peng Su and Matthias Nießner and Hongyang Li},
-      year={2025},
-      eprint={2503.12552},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2503.12552}, 
+@article{li2025mtgs,
+  title={MTGS: Multi-Traversal Gaussian Splatting},
+  author={Li, Tianyu and Qiu, Yihang and Wu, Zhenhua and Lindstr{\"o}m, Carl and Su, Peng and Nie{\ss}ner, Matthias and Li, Hongyang},
+  journal={arXiv preprint arXiv:2503.12552},
+  year={2025}
 }
 ```
 
