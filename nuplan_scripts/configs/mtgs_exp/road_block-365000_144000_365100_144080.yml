@@ -1,0 +1,19 @@
+!!python/object:nuplan_scripts.utils.config.RoadBlockConfig
+city: sg-one-north
+data_root: ./data/MTGS
+interval: 1
+reconstruct_buffer: 0
+expand_buffer: 0
+exclude_bad_registration: false
+use_colmap_ba: false
+collect_raw: true
+road_block: !!python/tuple
+- 365000
+- 144000
+- 365100
+- 144080
+road_block_name: road_block-365000_144000_365100_144080
+selected_videos: !!python/tuple
+- 3
+- 4
+- 5

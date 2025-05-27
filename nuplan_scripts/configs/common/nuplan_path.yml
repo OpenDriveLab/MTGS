@@ -1,0 +1,5 @@
+NUPLAN_DATA_ROOT: "./data/nuplan/dataset/nuplan-v1.1"
+NUPLAN_DB_FILES: "./data/nuplan/dataset/nuplan-v1.1/splits/trainval"
+NUPLAN_SENSOR_ROOT: "./data/nuplan/dataset/nuplan-v1.1/sensor_blobs"
+NUPLAN_MAPS_ROOT: "./data/nuplan/dataset/maps"
+NUPLAN_MAP_VERSION: "nuplan-maps-v1.0"

@@ -1,14 +1,24 @@
-# MTGS
+<div align="center">
 
-The official webpage of our paper:
+# **MTGS: Multi-Traversal Gaussian Splatting**
 
-**MTGS: Multi-Traversal Gaussian Splatting**
+</div>
 
-> 📜 [[arxiv](https://arxiv.org/abs/2503.12552)]
+> 📜 [[arxiv](https://arxiv.org/abs/2503.12552)] 🤗 [[dataset](https://huggingface.co/datasets/OpenDriveLab/MTGS/tree/main/MTGS_paper_data)]
 
 <div id="top" align="center">
 <p align="center">
 <img src="assets/figure_teaser.png" width="1000px" >
+</p>
+</div>
+
+## 🔥 Highlights
+
+**MTGS** manages to leverage multi-traversal data for scene reconstruction with better geometry. We utilize the [nuPlan](https://www.nuscenes.org/nuplan) dataset with extensive multi-traversal data. 
+
+<div id="top" align="center">
+<p align="center">
+<img src="assets/figure_pipeline.png" width="1000px" >
 </p>
 </div>
 
@@ -28,26 +38,20 @@ Rendered results on the testing traversal.
 
 https://github.com/user-attachments/assets/073458fe-0806-4b3c-9645-129cc066b6d1
 
-## 🔥 Highlights
-
-**MTGS** manages to leverage multi-traversal data for scene reconstruction with better geometry.
-
-<div id="top" align="center">
-<p align="center">
-<img src="assets/figure_pipeline.png" width="1000px" >
-</p>
-</div>
-
-
 ## 📢 News
 
-- **[YY/MM/DD]** TODO.
-
+- **[2025/05/27]** Official code release.
 
 ## 📋 TODO List
 
-- [ ] Official code release.
+- [x] Official code release.
 - [ ] More visualizations in different roadblocks.
+
+## 🔥 Getting Started
+
+- 📦 [Installation](docs/installation.md)
+- 📊 [Prepare Data](docs/prepare_dataset.md)
+- 🚀 [Running](docs/running.md)
 
 ## ⭐ Citation
 
@@ -65,3 +69,14 @@ If any parts of our paper and code help your research, please consider citing us
 ## ⚖️ License
 
 All content in this repository are under the [Apache-2.0 license](https://www.apache.org/licenses/LICENSE-2.0).
+The released data is based on [nuPlan](https://www.nuscenes.org/nuplan) and are under the [CC-BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
+
+## Related resources
+
+We acknowledge all the open-source contributors for the following projects to make this work possible:
+
+- [nerfstudio](https://github.com/nerfstudio-project/nerfstudio)
+- [gsplat](https://github.com/nerfstudio-project/gsplat)
+- [drivestudio](https://github.com/ziyc/drivestudio)
+- [kiss-icp](https://github.com/PRBonn/kiss-icp)
+- [UniDepth](https://github.com/lpiccinelli-eth/UniDepth)

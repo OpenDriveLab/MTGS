@@ -1,0 +1,20 @@
+!!python/object:nuplan_scripts.utils.config.RoadBlockConfig
+city: us-pa-pittsburgh-hazelwood
+data_root: ./data/MTGS
+interval: 1
+reconstruct_buffer: 0
+expand_buffer: 0
+exclude_bad_registration: false
+use_colmap_ba: false
+collect_raw: true
+road_block: !!python/tuple
+- 587400
+- 4475700
+- 587480
+- 4475800
+road_block_name: road_block-587400_4475700_587480_4475800
+selected_videos: !!python/tuple
+- 0
+- 2
+- 23
+- 31

@@ -1,0 +1,13 @@
+numpy==1.26.3
+tensorly==0.8.1
+rawpy==0.21.0
+kornia==0.7.2
+setuptools==69.5.1
+urllib3==1.26.20
+tyro==0.8.4
+typeguard==2.13.3
+jaxtyping==0.2.30
+ninja==1.11.1.1
+git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
+git+https://github.com/nerfstudio-project/gsplat.git@v1.4.0  # install gsplat from source to pre-compile it, instead of JIT.
+nerfstudio==1.1.5
