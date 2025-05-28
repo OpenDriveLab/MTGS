@@ -36,21 +36,13 @@ All the videos below are reconstructed and rendered with our method, MTGS, from 
 
 **Rendered results on training traversals 1, 2, and 3, from top to bottom.**
 
-<p align="center">
-<img src="https://raw.githubusercontent.com/OpenDriveLab/opendrivelab.github.io/refs/heads/master/MTGS/road_block-331220_4690660_331190_4690710/traversal_1_trimmed.gif" width="1000px" >
-</p>
-<p align="center">
-<img src="https://raw.githubusercontent.com/OpenDriveLab/opendrivelab.github.io/refs/heads/master/MTGS/road_block-331220_4690660_331190_4690710/traversal_2_trimmed.gif" width="1000px" >
-</p>
-<p align="center">
+<img src="https://raw.githubusercontent.com/OpenDriveLab/opendrivelab.github.io/refs/heads/master/MTGS/road_block-331220_4690660_331190_4690710/traversal_1_trimmed.gif" width="1000px" ><br>
+<img src="https://raw.githubusercontent.com/OpenDriveLab/opendrivelab.github.io/refs/heads/master/MTGS/road_block-331220_4690660_331190_4690710/traversal_2_trimmed.gif" width="1000px" ><br>
 <img src="https://raw.githubusercontent.com/OpenDriveLab/opendrivelab.github.io/refs/heads/master/MTGS/road_block-331220_4690660_331190_4690710/traversal_3_trimmed.gif" width="1000px" >
-</p>
 
 ***Novel-view*** results on the testing traversal.
 
-<p align="center">
 <img src="https://raw.githubusercontent.com/OpenDriveLab/opendrivelab.github.io/refs/heads/master/MTGS/road_block-331220_4690660_331190_4690710/traversal_test_trimmed.gif" width="1000px" >
-</p>
 
 </div>
 
