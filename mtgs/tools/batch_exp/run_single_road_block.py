@@ -3,6 +3,8 @@ import argparse
 import importlib
 import copy
 import json
+import yaml
+import torch
 from pathlib import Path
 
 if __name__ == '__main__':
@@ -17,9 +19,12 @@ if __name__ == '__main__':
     parser.add_argument('--eval-only', action='store_true')
     args = parser.parse_args()
 
+    # We hack the enviroment variable to register the method and dataparser to nerfstudio.
+    # NOTE: the method name is `mtgs` here, not guaranteed to be the same as in the config.
     module_name = args.ns_config.replace('.py', '').replace('/', '.')
     os.environ["NERFSTUDIO_DATAPARSER_CONFIGS"] = "nuplan=mtgs.config.nuplan_dataparser:nuplan_dataparser"
     os.environ["NERFSTUDIO_METHOD_CONFIGS"] = 'mtgs=' + module_name + ':method'
+
     # Convert string arguments back to tuples
     train_traversal = tuple(int(x) for x in args.train_traversal.split(',')) if args.train_traversal != "None" else ()
     eval_traversal = tuple(int(x) for x in args.eval_traversal.split(',')) if args.eval_traversal != "None" else ()
@@ -43,7 +48,7 @@ if __name__ == '__main__':
         main(ns_config)
 
     # evaluation
-    from nerfstudio.utils.eval_utils import eval_setup
+    from nerfstudio.utils.eval_utils import eval_load_checkpoint
     load_config = Path(output_dir) / 'config.yml'
     output_path = Path(output_dir) / 'eval_result.json'
 
@@ -55,7 +60,27 @@ if __name__ == '__main__':
         config.pipeline.model.dinov2_metric = True
         return config
 
-    config, pipeline, checkpoint_path, _ = eval_setup(load_config, update_config_callback=update_config)
+    def eval_setup(config_path, test_mode, update_config_callback):
+        # load save config
+        config = yaml.load(config_path.read_text(), Loader=yaml.Loader)
+
+        if update_config_callback is not None:
+            config = update_config_callback(config)
+
+        # load checkpoints from wherever they were saved
+        config.load_dir = config.get_checkpoint_dir()
+
+        # setup pipeline (which includes the DataManager)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        pipeline = config.pipeline.setup(device=device, test_mode=test_mode)
+        pipeline.eval()
+
+        # load checkpointed information
+        checkpoint_path, step = eval_load_checkpoint(config, pipeline)
+
+        return config, pipeline, checkpoint_path, step
+
+    config, pipeline, checkpoint_path, _ = eval_setup(load_config, test_mode="test", update_config_callback=update_config)
     metrics_dict = pipeline.get_average_eval_image_metrics(get_std=False)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     # Get the output and define the names to save to

@@ -5,20 +5,24 @@
 #-------------------------------------------------------------------------------#
 import os
 import argparse
+import yaml
+import torch
 from pathlib import Path
 from mtgs.tools.batch_exp.mtgs_tasks import tasks_registry
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--ns-config', type=str, default='mtgs/config/MTGS.py')
-    parser.add_argument('--output-dir', type=str, default='experiments/main_mt')
+    parser.add_argument('--output-dir', type=str, default='experiments/main_mt/MTGS')
     parser.add_argument('--task-name', type=str, default='main_mt')
     args = parser.parse_args()
 
+    # We hack the enviroment variable to register the method and dataparser to nerfstudio.
+    # NOTE: the method name is `mtgs` here, not guaranteed to be the same as in the config.
     module_name = args.ns_config.replace('.py', '').replace('/', '.')
-    os.environ["NERFSTUDIO_METHOD_CONFIGS"] = 'gs-nuplan=' + module_name + ':method'
     os.environ["NERFSTUDIO_DATAPARSER_CONFIGS"] = "nuplan=mtgs.config.nuplan_dataparser:nuplan_dataparser"
-    from nerfstudio.utils.eval_utils import eval_setup
+    os.environ["NERFSTUDIO_METHOD_CONFIGS"] = 'mtgs=' + module_name + ':method'
+    from nerfstudio.utils.eval_utils import eval_load_checkpoint
 
     def update_config(config):
         config.pipeline.image_saving_mode = "sequential"
@@ -37,6 +41,27 @@ if __name__ == '__main__':
         config.pipeline.model.lpips_metric = False
         config.pipeline.model.dinov2_metric = False
         return config
+
+    def eval_setup(config_path, test_mode, update_config_callback):
+        # load save config
+        config = yaml.load(config_path.read_text(), Loader=yaml.Loader)
+
+        if update_config_callback is not None:
+            config = update_config_callback(config)
+
+        # load checkpoints from wherever they were saved
+        config.load_dir = config.get_checkpoint_dir()
+
+        # setup pipeline (which includes the DataManager)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        pipeline = config.pipeline.setup(device=device, test_mode=test_mode)
+        pipeline.eval()
+
+        # load checkpointed information
+        checkpoint_path, step = eval_load_checkpoint(config, pipeline)
+
+        return config, pipeline, checkpoint_path, step
+
 
     tasks = tasks_registry[args.task_name]
     for task in tasks:

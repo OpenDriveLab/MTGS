@@ -48,6 +48,7 @@ class NuPlanDataparserOutputs(DataparserOutputs):
     frame_tokens: Optional[List[str]] = None
     cam_tokens: Optional[List[str]] = None
     frame_ids: Optional[List[int]] = None
+    scene_scale_factor: float = 1.0
 
 @dataclass
 class NuplanDataParserConfig(DataParserConfig):
@@ -206,7 +207,7 @@ class NuplanDataParser(DataParser):
 
             # filter test frames
             if split != 'train':
-                if not self.config.eval_2hz and not self.config.eval_openscene:
+                if not self.config.eval_openscene:
                     video_scene_dict = video_scene.video_scene_dict_process('filter_skipped_frames', inline=True)
 
                 for video_token in video_scene_dict:
@@ -396,7 +397,7 @@ class NuplanDataParser(DataParser):
         # assumes that the scene is centered at the origin
         road_block = road_block_config.road_block
         road_block_size = np.array([road_block[2] - road_block[0], road_block[3] - road_block[1]]).max()
-        block_size = np.array(self.config.block_size).reshape(2, 3) * road_block_size
+        block_size = np.array(self.config.block_size).reshape(2, 3) * road_block_size * self.config.scale_factor
 
         scene_box = SceneBox(
             aabb=torch.tensor(
@@ -462,6 +463,7 @@ class NuplanDataParser(DataParser):
             frame_ids=frame_indices,
             frame_tokens=frame_tokens,
             cam_tokens=cam_tokens,
+            scene_scale_factor=self.config.scale_factor
         )
         return dataparser_outputs
 

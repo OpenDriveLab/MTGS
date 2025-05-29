@@ -41,8 +41,6 @@ config = CustomTrainerConfig(
                 eval_2hz=True,
             ),
             camera_res_scale_factor=0.5,
-            dynamic_scaling_factor_stages=1,
-            dynamic_scaling_factor_interval=3000,
             cache_strategy="async",
             num_workers=4,
             cache_images="cpu",

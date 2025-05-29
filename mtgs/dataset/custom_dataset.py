@@ -383,14 +383,14 @@ class CustomInputDataset(InputDataset):
 
         if self._dataparser_outputs.depth_filenames is not None and self.load_pseudo_depth:
             # depth image is already undistorted
-            data["depth"] = self._get_depth_from_image(image_idx)
+            data["depth"] = self._get_depth_from_image(image_idx) * self._dataparser_outputs.scene_scale_factor
 
         if scale_factor != 1.0:
             self._resize_data(data, camera, scale_factor)
 
         if self._dataparser_outputs.lidar_filenames is not None and self.load_lidar_depth:
             # ensure that the cameras are already undistorted / resized / cropped.
-            data["lidar_depth"] = self._get_depth_from_lidar(image_idx, camera=camera)
+            data["lidar_depth"] = self._get_depth_from_lidar(image_idx, camera=camera) * self._dataparser_outputs.scene_scale_factor
 
         # transform all the data to torch tensors
         if image_type == "float32":

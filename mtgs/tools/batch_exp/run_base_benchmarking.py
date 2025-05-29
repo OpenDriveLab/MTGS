@@ -67,7 +67,7 @@ def run_reconstruction(task, args):
 
             CONSOLE.log(f'Reconstruction for {os.path.basename(output_dir)} started (GPU {gpu_id})')
             start_time = time.time()
-            command = f'python batch_exp_scripts/run_single_road_block.py --ns-config {args.ns_config} --config {task["config"]} --train-traversal {train_traversal_str} --eval-traversal {eval_traversal_str} --output-dir {args.output_dir}'
+            command = f'python -m mtgs.tools.batch_exp.run_single_road_block --ns-config {args.ns_config} --config {task["config"]} --train-traversal {train_traversal_str} --eval-traversal {eval_traversal_str} --output-dir {args.output_dir}'
             if args.eval_only:
                 command += ' --eval-only'
             with open(log_file, 'w') as log:
