@@ -13,6 +13,26 @@ We offer three ways to run the codebase,
 - **Web viewer** with multi-traversal support and time slicer.
 - Multi-GPU training for multiple scenes. See [below](#batch-processing-the-reconstruction-and-aggregate-the-results) for more details.
 
+## (Optional) Download the checkpoints
+
+We upload the checkpoints used in the MTGS paper to the [Hugging Face](https://huggingface.co/datasets/OpenDriveLab/MTGS/tree/main/MTGS_paper_ckpts). 
+You can use the checkpoints to visualize the reconstruction and evaluate the performance.
+Please download the checkpoints and extract it in following structure:
+
+```
+MTGS/experiments/
+└── main_mt
+    ├── 3DGS
+    └── MTGS
+        ├── {road_block_name_1}
+        |   ├── nerfstudio_models      # The checkpoint of the model.
+        |   ├── config.yml             # The config file of the model.
+        |   └── eval_result.json       # The evaluation results of the model.
+        ├── {road_block_name_2}
+        ├── ...
+        ├── paste_table.tsv            # The aggregated results of all the road blocks.
+        └── results_summary.csv        # The results for each road block.
+```
 
 ## Run the codebase using nerfstudio-style command line interface
 First, you need to install the MTGS as a nerfstudio plugin.

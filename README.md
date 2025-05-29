@@ -3,7 +3,7 @@
 # **MTGS: Multi-Traversal Gaussian Splatting**
 
 [![Arxiv](https://img.shields.io/badge/arXiv-2503.12552-b31b1b.svg?style=for-the-badge&logo=arxiv)](https://arxiv.org/abs/2503.12552)
-[![datasets](https://img.shields.io/badge/%F0%9F%A4%97-Dataset-yellow?style=for-the-badge)](https://huggingface.co/datasets/OpenDriveLab/MTGS)
+[![dataset](https://img.shields.io/badge/HF-Dataset-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/datasets/OpenDriveLab/MTGS)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0.1-EE4C2C.svg?style=for-the-badge&logo=pytorch)](https://pytorch.org)
 [![Python](https://img.shields.io/badge/python-3.9-blue?style=for-the-badge)](https://www.python.org)
 
@@ -48,6 +48,7 @@ All the videos below are reconstructed and rendered with our method, MTGS, from 
 
 ## 📢 News
 
+- **[2025/05/29]** We release the checkpoints. [Check it out](docs/running.md#optional-download-the-checkpoints)!
 - **[2025/05/27]** Official code release.
 - **[2025/05/14]** Video demo release.
 - **[2025/03/16]** We released our [paper](https://arxiv.org/abs/2503.12552) on arXiv. 
@@ -55,7 +56,7 @@ All the videos below are reconstructed and rendered with our method, MTGS, from 
 ## 📋 TODO List
 
 - [x] Official code release.
-- [ ] More visualizations in different roadblocks.
+- [x] Release the checkpoints.
 - [ ] Demo page.
 
 ## 🕹️ Getting Started
