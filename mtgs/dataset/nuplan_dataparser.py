@@ -63,19 +63,11 @@ class NuplanDataParserConfig(DataParserConfig):
     train_scene_travels: tuple[int, ...] = ()
     eval_scene_travels: tuple[int, ...] = ()
     manual_split: bool = False
-    train_split_fraction: float = 1.0
-    """If `eval_scene_travels` is not `None`, manual_split will be overrided by `False`.
-    When `manual_split` is set to `True` while `eval_scene_travels` is set to `None`, `train_split_fraction` will
-    control the percent of images to use for training. The remaining images are for eval."""
+    """If True, the train and eval frames are interleaved one by one."""
 
     cameras: Tuple[Literal['CAM_F0', 'CAM_L0', 'CAM_R0', 'CAM_L1', 'CAM_R1', 'CAM_L2', 'CAM_R2', 'CAM_B0'], ...] = \
         ('CAM_F0', 'CAM_L0', 'CAM_L1', 'CAM_L2', 'CAM_R0', 'CAM_R1', 'CAM_R2', 'CAM_B0')
     """Which cameras to use."""
-    
-    cam_id_to_name = {0:'CAM_F0', 1:'CAM_L0', 2:'CAM_R0', 3:'CAM_L1', 4:'CAM_R1', 5:'CAM_L2', 6:'CAM_R2', 7:'CAM_B0'}
-    OPENCV2DATASET = np.array(
-            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-        )
 
     use_colmap_pose: bool = False
     """If True, use the colmap pose for the images."""
@@ -94,10 +86,8 @@ class NuplanDataParserConfig(DataParserConfig):
     """load camera optimizer results from given model path. Used in interpolate rendering."""
     cam_optim_key: Optional[str] = '_model.camera_optimizer.pose_adjustment'
 
-    undistort_images: Literal["optimal", "keep_focal_length", False] = "keep_focal_length"
-
-    per_traversal_timestamp_normalization: bool = False
-    """If True, normalize the timestamp of each frame to be in the range of [0, 1] for each traversal."""
+    undistort_images: Literal["optimal", "keep_focal_length", False] = "optimal"
+    """Whether to undistort the images. If False, the images are not undistorted."""
 
     eval_2hz: bool = False
     """If True, evaluate the model at 2Hz."""

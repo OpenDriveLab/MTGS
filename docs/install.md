@@ -2,8 +2,7 @@
 
 ## Prerequisites
 
-You must have a CUDA-enabled NVIDIA video card.
-The code is tested on Ubuntu 20.04 and CUDA 11.8.
+You must have a CUDA-enabled NVIDIA video card. The code is tested on Ubuntu 20.04 and CUDA 11.8. You may need at least 40 GB of GPU memory and 64 GB of RAM to run the code.
 
 ## Dependencies
 

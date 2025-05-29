@@ -43,16 +43,28 @@ class CustomFullImageDatamanagerConfig(FullImageDatamanagerConfig):
     load_lidar_depth: bool = False
     load_pseudo_depth: bool = False
     cache_strategy: Literal["on_demand", "prefetch", "async"] = "async"
+    """The cache strategy to use for data loading.
+    - on_demand: load data on demand. Recommended only for debugging.
+    - prefetch: prefetch data with multiprocessing before training
+    - async: load data asynchronously with multiprocessing
+    """
     eval_cache_strategy: Optional[Literal["on_demand", "prefetch", "async"]] = None
+    """The cache strategy to use for evaluation. If None, the same as cache_strategy."""
     num_workers: int = 4
-    cache_images: Literal["cpu", "gpu"] = "cpu"
-    """CPU by default, too much images"""
+    """The number of workers to use for data loading. If 0, the data will be loaded in the main process."""
+
+    cache_images: Literal["cpu"] = "cpu"
+    """Whether to cache images in cpu or gpu.
+    Only support cpu in MTGS. There are too many images for multi-traversal setting."""
     cache_images_type: Literal["uint8", "float32"] = "uint8"
     """The image type returned from manager, caching images in uint8 saves memory"""
+
     crop_image: bool = False
     """whether to crop the image to 1920x1024, to match some CNN input size"""
-    undistort_images: Literal["optimal", "keep_focal_length", False] = "keep_focal_length"
+    undistort_images: Literal["optimal", "keep_focal_length", False] = "optimal"
+    """Whether to undistort the images. If False, the images are not undistorted."""
     multi_traversal_balanced_sampling: bool = False
+    """If True, sample cameras in equal amounts for each traversal. Not guaranteed to be better performance."""
 
 
 class CustomFullImageDatamanager(FullImageDatamanager, Generic[TDataset]):

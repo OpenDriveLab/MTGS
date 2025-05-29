@@ -6,6 +6,14 @@ We offer three ways to run the codebase,
 2. (Recommended) For development, you can run the codebase with the command in `dev.sh` for customized configs.
 3. (Recommended) Batch processing the reconstruction and aggregate the results.
 
+**More features supported by MTGS**
+
+- Our customized datamanager supports multi-process async data loading. See `mtgs/dataset/custom_datamanager.py:CustomFullImageDatamanagerConfig.cache_strategy` for more details.
+- Rendering with pose interpolation to **60Hz** and multi-traversal support.
+- **Web viewer** with multi-traversal support and time slicer.
+- Multi-GPU training for multiple scenes. See [below](#batch-processing-the-reconstruction-and-aggregate-the-results) for more details.
+
+
 ## Run the codebase using nerfstudio-style command line interface
 First, you need to install the MTGS as a nerfstudio plugin.
 ```bash
@@ -35,8 +43,8 @@ Then, you can use the following commands to train and visualize the reconstructi
 ```bash
 mtgs_setup mtgs/config/MTGS.py   # set the config file
 mtgs_train {args} # train the model, you can set the args in the config file or in the command line
-mtgs_viewer {/path/to/output/config.yaml} # visualize the reconstruction
-mtgs_render {/path/to/output/config.yaml} # render the reconstruction
+mtgs_viewer {/path/to/output/config.yml} # visualize the reconstruction with web viewer
+mtgs_render {/path/to/output/config.yml} # render the multi-traversal reconstruction under interpolated poses
 ```
 
 ## Batch processing the reconstruction and aggregate the results
@@ -48,5 +56,17 @@ The defined tasks including data configurations in `mtgs/tools/batch_exp/mtgs_ta
 python mtgs/tools/batch_exp/run_base_benchmarking.py \
     --ns-config mtgs/config/MTGS.py \
     --task-name main_mt \
-    --output-dir experiments/main_mt
+    --output-dir experiments/main_mt/MTGS
 ```
+
+The script supports multi-GPU training. You can set the `CUDA_VISIBLE_DEVICES` environment variable to specify the GPUs to use.
+
+You can also run the script to export all the evaluation images.
+```bash
+python mtgs/tools/batch_exp/export_eval_images.py \
+    --ns-config mtgs/config/MTGS.py \
+    --task-name main_mt \
+    --output-dir experiments/main_mt/MTGS
+```
+
+The exported images will be saved in `experiments/main_mt/MTGS/rendered_images`.
