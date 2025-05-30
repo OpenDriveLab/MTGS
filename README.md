@@ -15,6 +15,8 @@
 </p>
 </div>
 
+>  Joint effort by Shanghai Innovation Institute (SII) and OpenDriveLab at The University of Hong Kong.
+
 ## 🔥 Highlights
 
 - **MTGS** leverages **multi-traversal** data for scene reconstruction with better geometry.
