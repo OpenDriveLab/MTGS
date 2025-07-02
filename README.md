@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> 🌟 Stay up to date at [opendrivelab.com](https://opendrivelab.com/#news)!
+
 <div align="center">
 
 # **MTGS: Multi-Traversal Gaussian Splatting**
