@@ -21,7 +21,7 @@ from nuplan_scripts.utils.config import load_config, RoadBlockConfig
 from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
 from nuplan_scripts.utils.constants import NUPLAN_SENSOR_ROOT
 
-model_path = "facebook/mask2former-swin-large-cityscapes-semantic"
+model_path = "ckpts/huggingface/facebook/mask2former-swin-large-cityscapes-semantic"
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -25,7 +25,7 @@ from nuplan_scripts.utils.nuplan_utils_custom import load_lidar
 from unidepth.models import UniDepthV2
 
 
-model_path = 'lpiccinelli/unidepth-v2-vitl14'
+model_path = 'ckpts/huggingface/lpiccinelli/unidepth-v2-vitl14'
 
 class MetricDepthError:
 

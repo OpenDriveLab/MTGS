@@ -42,10 +42,16 @@ pip install -r requirements_data.txt
 
 # Install kiss-icp.
 # this is a customized version with some changes, based on kiss-icp 1.0.0
+# tested on cmake 3.29.6 and gcc 9.5.0
 cd thirdparty/kiss-icp
 make editable
 
 # Install UniDepth.
 # The requirements are aligned with MTGS.
 pip install -e thirdparty/UniDepth
+
+# Download the pretrained models for UniDepth and Mask2Former
+mkdir -p ckpts/huggingface
+huggingface-cli download --local-dir ckpts/huggingface/facebook/mask2former-swin-large-cityscapes-semantic facebook/mask2former-swin-large-cityscapes-semantic
+huggingface-cli download --local-dir ckpts/huggingface/lpiccinelli/unidepth-v2-vitl14 lpiccinelli/unidepth-v2-vitl14 --revision 1d0d3c52f60b5164629d279bb9a7546458e6dcc4
 ```
