@@ -43,6 +43,10 @@ class GaussianSplattingControlConfig(PrintableConfig):
     """threshold of opacity for culling gaussians. One can set it to a lower value (e.g. 0.005) for higher quality."""
     cull_scale_thresh: Optional[float] = None
     """threshold of scale for culling huge gaussians"""
+    far_background_distance_thresh: float = 100.0
+    """distance threshold for far background gaussians to avoid culling"""
+    far_background_cull_scale_factor: float = 40.0
+    """scale multiplier for far background gaussian culling threshold"""
     densify_grad_thresh: Optional[float] = None
     """threshold of positional gradient norm for densifying gaussians"""
     densify_size_thresh: Optional[float] = None
@@ -596,8 +600,15 @@ class VanillaGaussianSplattingModel(torch.nn.Module):
 
             # Temporal fix for far background gaussians.
             # Do not cull far background gaussians.
-            far_mask = self.means.norm(dim=-1) > 100
-            cull_scale_thresh = torch.where(far_mask, 40, 1.) * self.ctrl_config.cull_scale_thresh
+            far_mask = self.means.norm(dim=-1) > self.ctrl_config.far_background_distance_thresh
+            cull_scale_thresh = (
+                torch.where(
+                    far_mask,
+                    self.ctrl_config.far_background_cull_scale_factor,
+                    1.0,
+                )
+                * self.ctrl_config.cull_scale_thresh
+            )
 
             # cull huge ones
             toobigs = (torch.exp(self.scales).max(dim=-1).values > cull_scale_thresh).squeeze()
