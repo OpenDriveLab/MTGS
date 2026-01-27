@@ -1,8 +1,8 @@
-r"""
-python -m nuplan_scripts.background_scripts.export_reconstruction \
-  --config ${CONFIG} \
-  --output_dir /path/to/out/dir
-"""
+#-------------------------------------------------------------------------------#
+# MTGS: Multi-Traversal Gaussian Splatting (https://arxiv.org/abs/2503.12552)   #
+# Source code: https://github.com/OpenDriveLab/MTGS                             #
+# Copyright (c) OpenDriveLab. All rights reserved.                              #
+#-------------------------------------------------------------------------------#
 import os
 import sys
 import argparse

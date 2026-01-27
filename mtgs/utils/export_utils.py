@@ -1,3 +1,8 @@
+#-------------------------------------------------------------------------------#
+# MTGS: Multi-Traversal Gaussian Splatting (https://arxiv.org/abs/2503.12552)   #
+# Source code: https://github.com/OpenDriveLab/MTGS                             #
+# Copyright (c) OpenDriveLab. All rights reserved.                              #
+#-------------------------------------------------------------------------------#
 from pathlib import Path
 from collections import OrderedDict
 
