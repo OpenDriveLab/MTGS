@@ -1,3 +1,8 @@
+#-------------------------------------------------------------------------------#
+# MTGS: Multi-Traversal Gaussian Splatting (https://arxiv.org/abs/2503.12552)   #
+# Source code: https://github.com/OpenDriveLab/MTGS                             #
+# Copyright (c) OpenDriveLab. All rights reserved.                              #
+#-------------------------------------------------------------------------------#
 import os
 import argparse
 import jsonlines
@@ -13,7 +18,7 @@ from nuplan_scripts.utils.nuplan_utils_custom import get_closest_start_idx
 from nuplan_scripts.utils.constants import NUPLAN_DATA_ROOT, NUPLAN_DB_FILES
 from nuplan_scripts.utils.config import FrameCentralConfig
 
-second_before_token = 4
+second_before_token = 3
 second_after_token = 8
 sample_interval = 1
 
@@ -75,7 +80,7 @@ class GenerateConfigFromToken:
                     trajectory_polyline.offset_curve(TRAJECTORY_OFFSET_RANGE), 
                     trajectory_polyline.offset_curve(-TRAJECTORY_OFFSET_RANGE)
                 ]).bounds
-                road_block = np.array(road_block, dtype=int)
+                road_block = np.array(road_block, dtype=int) + np.array([-1, -1, 1, 1])
 
                 # Get the road_block.
                 # If the trajectory is too short, use a fixed size road block.
@@ -95,6 +100,18 @@ class GenerateConfigFromToken:
                     road_block = np.concatenate([
                         np.min([road_block[:2], new_road_block[:2]], axis=0), 
                         np.max([road_block[2:], new_road_block[2:]], axis=0)], axis=0)
+                
+                # The last lidar_pc in the roadblock may be after the last one of in_range_lidar_pcs.
+                # So, find the last lidar_pc whose pose is still within the road_block, starting from selected_idx.
+                x_min, y_min, x_max, y_max = road_block
+                last_in_block_idx = None
+                for idx in range(selected_idx, len(lidar_pcs)):
+                    pose = lidar_pcs[idx].ego_pose.translation_np[:2]
+                    if x_min <= pose[0] <= x_max and y_min <= pose[1] <= y_max:
+                        last_in_block_idx = idx
+                    else:
+                        break
+                shared_lidar_pcs = lidar_pcs[selected_idx:last_in_block_idx - 4 * 20 // (2*sample_interval)]
 
                 token_config = FrameCentralConfig(
                     road_block_name=f"{central_log}-{token}",
@@ -103,7 +120,7 @@ class GenerateConfigFromToken:
                     city=log.map_version,
                     interval=sample_interval,
                     expand_buffer=0,
-                    reconstruct_buffer=0,
+                    reconstruct_buffer=10,
                     selected_videos=(),
                     split=self.split,
                     collect_raw=False,
@@ -113,7 +130,7 @@ class GenerateConfigFromToken:
                 )
                 token_configs.append(token_config)
                 token_config_meta_datas.append({
-                    'in_range_tokens': [lidar_pc.token for lidar_pc in in_range_lidar_pcs],
+                    'in_range_tokens': [lidar_pc.token for lidar_pc in shared_lidar_pcs],
                     'road_block': road_block
                 })
 
@@ -147,19 +164,38 @@ class GenerateConfigFromToken:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--navsim_filter', type=str, required=True, help='Path to the navsim filter yaml')
-    parser.add_argument('--data_root', type=str, required=True, help='Path to the MTGS data root')
+    parser.add_argument(
+        '--navsim_config',
+        type=str,
+        required=True,
+        nargs='+',
+        help='Path(s) to the navsim config file(s). Can be a single path or a list of paths separated by space.'
+    )
+    parser.add_argument('--data_root', type=str, required=True, help='Path to the DigitalTwin data root')
     parser.add_argument('--output_dir', type=str, required=True, help='Output directory to save the generated configs')
     parser.add_argument('--split', type=str, default='trainval', choices=['trainval', 'test', 'private_test', 'all'])
     parser.add_argument('--num_workers', type=int, default=0)
     args = parser.parse_args()
 
-    navsim_filter = yaml.load(open(args.navsim_filter, 'r'), Loader=yaml.FullLoader)
+    if isinstance(args.navsim_config, str):
+        navsim_configs = [args.navsim_config]
+    else:
+        navsim_configs = args.navsim_config
+
+    selected_tokens = []
+    for navsim_config in navsim_configs:
+        navsim_config = yaml.load(open(navsim_config, 'r'), Loader=yaml.FullLoader)
+        selected_tokens.extend(navsim_config['tokens'])
+    selected_tokens = set(selected_tokens)
+
+    if not os.path.exists(args.data_root):
+        os.makedirs(args.data_root, exist_ok=True)
+        os.system(f"ln -s ../data/nuplan_log_infos.jsonl {args.data_root}/nuplan_log_infos.jsonl")
+        os.system(f"ln -s ../data/ego_masks {args.data_root}/ego_masks")
 
     with jsonlines.open(os.path.join(args.data_root, 'nuplan_log_infos.jsonl'), 'r') as reader:
         log_name2lidar_pc_token = {item['log_name']: item for item in reader}
 
-    selected_tokens = set(navsim_filter['tokens'])
     token_mapping = {}
     for log_name in log_name2lidar_pc_token:
         for tokens in log_name2lidar_pc_token[log_name]['lidar_pc_tokens']:

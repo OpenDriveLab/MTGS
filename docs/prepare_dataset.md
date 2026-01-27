@@ -242,10 +242,10 @@ bash nuplan_scripts/preprocess.sh $CONFIG $NUM_WORKERS $NUM_GPUS
 You can also generate a list of `FrameCentralConfig` from a given token list. We read the token list from `navsim` filter config file.
 
 ``` bash
-python -m nuplan_scripts.misc.generate_config_from_token \
+python -m nuplan_scripts.auto_reconstruction.generate_configs_from_navsim_filter \
     --navsim_config path/to/navsim/filter.yaml \
     --data_root data/{output_dir} \
-    --output_dir  data/{output_dir}/configs \
+    --output_dir data/{output_dir}/configs \
     --num_workers $NUM_WORKERS
 ```
 

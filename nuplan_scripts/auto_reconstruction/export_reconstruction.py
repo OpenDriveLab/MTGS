@@ -62,13 +62,6 @@ if __name__ == '__main__':
         nerfstudio_config, pipeline, _, _ = eval_setup(nerfstudio_config, test_mode='inference')
         extract_portable_ckpt(pipeline, dst_ckpt_path)
 
-    CONSOLE.log("Exporting road height map.", style='bold magenta')
-    road_height_map_dir = Path(video_scene.road_height_map_path)
-    target_dir = Path(args.output_dir) / f"{config.road_block_name}/road_height_map"
-    if target_dir.exists():
-        shutil.rmtree(target_dir)
-    shutil.copytree(road_height_map_dir, target_dir)
-
     CONSOLE.log("Exporting config.", style='bold magenta')
     save_config_path = os.path.join(video_scene.data_root, 'configs', os.path.basename(args.config))
     os.makedirs(os.path.dirname(save_config_path), exist_ok=True)
