@@ -111,6 +111,8 @@ class NuplanDataParser(DataParser):
         self.video_scene = video_scene
         video_scene_dict = video_scene.load_pickle(video_scene.pickle_path, verbose=False)
         cameras = self.config.cameras
+        # NOTE: 'recon' and 'global' are the local coordinate of the road block, 'world' is refer to the city coordinate
+        self.recon2world_translation = video_scene_dict[list(video_scene_dict.keys())[0]]['global2world_translation']
 
         # get image filenames and camera data
         image_filenames = []
