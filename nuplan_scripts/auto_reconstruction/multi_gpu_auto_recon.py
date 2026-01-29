@@ -6,11 +6,9 @@
 import os
 import shutil
 import argparse
-import json
 import subprocess
 import multiprocessing
 import time
-import pandas as pd
 import torch
 import fcntl
 import socket
@@ -164,11 +162,22 @@ def run_reconstruction(task_manager, gpu_manager, args):
         CONSOLE.log(f'Reconstruction for {config_id} started (GPU {gpu_id})')
         start_time = time.time()
         
-        # Construct command similar to pai_dlc.py
-        command = f'bash nuplan_scripts/auto_reconstruction/recon_single_config.sh --config {config_path} --export-dir {args.export_dir} --output-dir {output_dir} --workers {args.workers}'
+        # Construct command similar to pai_dlc.py, using argument list to avoid shell injection
+        command = [
+            "bash",
+            "nuplan_scripts/auto_reconstruction/recon_single_config.sh",
+            "--config",
+            str(config_path),
+            "--export-dir",
+            str(args.export_dir),
+            "--output-dir",
+            str(output_dir),
+            "--workers",
+            str(args.workers),
+        ]
 
         with open(log_file, 'w') as log:
-            process = subprocess.Popen(command, stdout=log, stderr=log, shell=True)
+            process = subprocess.Popen(command, stdout=log, stderr=log)
             process.communicate()
             if process.returncode != 0:
                 raise Exception(f'Reconstruction for {config_id} failed')

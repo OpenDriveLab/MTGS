@@ -32,7 +32,7 @@ Token List (NAVSIM filter)
         │
         ▼ (per config, runs recon_single_config.sh)
 ┌───────────────────────────────┐
-│  1. stage_all.sh              │  ← Data preprocessing
+│  1. preprocess.sh             │  ← Data preprocessing
 │  2. background_reconstruction │  ← Gaussian splatting training
 │  3. render_reconstruction     │  ← Render & evaluate
 │  4. export_reconstruction     │  ← Export portable checkpoint

@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --help)
-            echo "Usage: $0 --config --export-dir DIR --output-dir DIR CONFIG [--workers NUM] [--gpus NUM]"
+            echo "Usage: $0 --config CONFIG --export-dir DIR --output-dir DIR [--workers NUM] [--gpus NUM]"
             echo "  --config:     Configuration file path (required)"
             echo "  --output-dir: Output directory path (required)"
             echo "  --export-dir: Export directory path (required)"
@@ -74,11 +74,11 @@ echo "Running with:
     WORKERS=$NUM_WORKERS
     GPUS=$NUM_GPUS"
 
-bash nuplan_scripts/preprocess.sh $CONFIG $NUM_WORKERS $NUM_GPUS
-python -m nuplan_scripts.auto_reconstruction.background_reconstruction --config $CONFIG
-python -m nuplan_scripts.auto_reconstruction.render_reconstruction --config $CONFIG
-python -m nuplan_scripts.auto_reconstruction.export_reconstruction --config $CONFIG --output_dir $EXPORT_DIR
-python -m nuplan_scripts.clean_temp_files --config $CONFIG
+bash nuplan_scripts/preprocess.sh "$CONFIG" "$NUM_WORKERS" "$NUM_GPUS"
+python -m nuplan_scripts.auto_reconstruction.background_reconstruction --config "$CONFIG"
+python -m nuplan_scripts.auto_reconstruction.render_reconstruction --config "$CONFIG"
+python -m nuplan_scripts.auto_reconstruction.export_reconstruction --config "$CONFIG" --output_dir "$EXPORT_DIR"
+python -m nuplan_scripts.clean_temp_files --config "$CONFIG"
 
 # If we reach here, all commands succeeded - disable cleanup trap
 trap - ERR
