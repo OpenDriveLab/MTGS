@@ -7,7 +7,7 @@ import os
 import argparse
 from pathlib import Path
 os.environ["NERFSTUDIO_DATAPARSER_CONFIGS"] = "nuplan=mtgs.config.nuplan_dataparser:nuplan_dataparser"
-os.environ["NERFSTUDIO_METHOD_CONFIGS"] = "mtgs-st=mtgs.config.MTGS_ST:method"
+os.environ["NERFSTUDIO_METHOD_CONFIGS"] = "mtgs_st=mtgs.config.MTGS_ST:method"
 
 from nuplan_scripts.utils.config import load_config
 from nuplan_scripts.utils.constants import CONSOLE

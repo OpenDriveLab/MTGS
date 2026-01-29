@@ -212,10 +212,10 @@ def worker_process(task_manager, gpu_manager, args, worker_id):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config-dir', type=str, default=None,
+    parser.add_argument('--config_dir', type=str, default=None,
                        help='Directory containing MTGS config files')
-    parser.add_argument('--output-dir', type=str, default=None)
-    parser.add_argument('--export-dir', type=str, default=None,
+    parser.add_argument('--output_dir', type=str, default=None)
+    parser.add_argument('--export_dir', type=str, default=None,
                        help='Export directory for assets')
     parser.add_argument('--workers', type=int, default=None,
                        help='Number of workers per task')

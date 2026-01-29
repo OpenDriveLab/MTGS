@@ -7,7 +7,7 @@ import os
 import argparse
 
 os.environ["NERFSTUDIO_DATAPARSER_CONFIGS"] = "nuplan=mtgs.config.nuplan_dataparser:nuplan_dataparser"
-os.environ["NERFSTUDIO_METHOD_CONFIGS"] = "mtgs-st=mtgs.config.MTGS_ST:method"
+os.environ["NERFSTUDIO_METHOD_CONFIGS"] = "mtgs_st=mtgs.config.MTGS_ST:method"
 
 from nerfstudio.scripts.train import main
 from mtgs.config.MTGS_ST import config as ns_config
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     ns_config.pipeline.datamanager.cache_strategy = 'prefetch'
     ns_config.pipeline.datamanager.dataparser.road_block_config = args.config
     ns_config.pipeline.datamanager.dataparser.train_scene_travels = (0,)
-    ns_config.pipeline.datamanager.dataparser.eval_scene_travels = (,)
+    ns_config.pipeline.datamanager.dataparser.eval_scene_travels = (0,)
     ns_config.pipeline.datamanager.dataparser.only_moving = True
     ns_config.pipeline.model.color_corrected_metrics = False
     ns_config.pipeline.model.lpips_metric = False

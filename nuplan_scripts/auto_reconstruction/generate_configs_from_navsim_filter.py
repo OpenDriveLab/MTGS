@@ -190,8 +190,8 @@ if __name__ == '__main__':
 
     if not os.path.exists(args.data_root):
         os.makedirs(args.data_root, exist_ok=True)
-        os.system(f"ln -s ../data/nuplan_log_infos.jsonl {args.data_root}/nuplan_log_infos.jsonl")
-        os.system(f"ln -s ../data/ego_masks {args.data_root}/ego_masks")
+        os.system(f"ln -s {os.path.abspath('data/MTGS/nuplan_log_infos.jsonl')} {args.data_root}/nuplan_log_infos.jsonl")
+        os.system(f"ln -s {os.path.abspath('data/MTGS/ego_masks')} {args.data_root}/ego_masks")
 
     with jsonlines.open(os.path.join(args.data_root, 'nuplan_log_infos.jsonl'), 'r') as reader:
         log_name2lidar_pc_token = {item['log_name']: item for item in reader}

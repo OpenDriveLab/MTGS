@@ -16,12 +16,12 @@ while [[ $# -gt 0 ]]; do
             CONFIG="$2"
             shift 2
             ;;
-        --export-dir)
-            EXPORT_DIR="$2"
-            shift 2
-            ;;
         --output-dir)
             OUTPUT_DIR="$2"
+            shift 2
+            ;;
+        --export-dir)
+            EXPORT_DIR="$2"
             shift 2
             ;;
         --workers)
@@ -69,12 +69,12 @@ trap cleanup_on_failure ERR
 
 echo "Running with:
     CONFIG=$CONFIG
-    EXPORT_DIR=$EXPORT_DIR
     OUTPUT_DIR=$OUTPUT_DIR
+    EXPORT_DIR=$EXPORT_DIR
     WORKERS=$NUM_WORKERS
     GPUS=$NUM_GPUS"
 
-bash nuplan_scripts/stage_all.sh $CONFIG $NUM_WORKERS $NUM_GPUS
+bash nuplan_scripts/preprocess.sh $CONFIG $NUM_WORKERS $NUM_GPUS
 python -m nuplan_scripts.auto_reconstruction.background_reconstruction --config $CONFIG
 python -m nuplan_scripts.auto_reconstruction.render_reconstruction --config $CONFIG
 python -m nuplan_scripts.auto_reconstruction.export_reconstruction --config $CONFIG --output_dir $EXPORT_DIR
