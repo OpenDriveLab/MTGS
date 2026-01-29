@@ -161,17 +161,15 @@ def run_reconstruction(task_manager, gpu_manager, args):
     try:
         CONSOLE.log(f'Reconstruction for {config_id} started (GPU {gpu_id})')
         start_time = time.time()
-        
-        # Construct command similar to pai_dlc.py, using argument list to avoid shell injection
         command = [
             "bash",
             "nuplan_scripts/auto_reconstruction/recon_single_config.sh",
             "--config",
             str(config_path),
-            "--export-dir",
-            str(args.export_dir),
             "--output-dir",
             str(output_dir),
+            "--export-dir",
+            str(args.export_dir),
             "--workers",
             str(args.workers),
         ]
@@ -245,15 +243,15 @@ if __name__ == '__main__':
     CONSOLE.log(f"Found {available_devices} GPU devices")
 
     # Clean up old locks
-    if os.path.exists(f'{os.environ["HOME"]}/.cache/gpu_locks'):
-        shutil.rmtree(f'{os.environ["HOME"]}/.cache/gpu_locks')
+    if os.path.exists(f'{os.path.expanduser("~")}/.cache/gpu_locks'):
+        shutil.rmtree(f'{os.path.expanduser("~")}/.cache/gpu_locks')
 
     # Determine number of workers
     num_workers = available_devices
     CONSOLE.log(f"Starting {num_workers} worker processes")
     
     # Create shared managers
-    gpu_manager = GPUManager(lock_dir=f'{os.environ["HOME"]}/.cache/gpu_locks')
+    gpu_manager = GPUManager(lock_dir=f'{os.path.expanduser("~")}/.cache/gpu_locks')
     
     # Start worker processes
     processes = []
@@ -268,4 +266,4 @@ if __name__ == '__main__':
     
     CONSOLE.log("All worker processes completed")
 
-    shutil.rmtree(f'{os.environ["HOME"]}/.cache/gpu_locks')
+    shutil.rmtree(f'{os.path.expanduser("~")}/.cache/gpu_locks')

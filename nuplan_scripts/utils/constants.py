@@ -13,7 +13,8 @@ os.environ['TQDM_NCOLS'] = '120'
 
 # load nuplan config
 nuplan_config_path = os.path.join(os.path.dirname(__file__), '..', 'configs', 'common', 'nuplan_path.yml')
-nuplan_config = yaml.load(open(nuplan_config_path, 'r'), Loader=yaml.FullLoader)
+with open(nuplan_config_path, 'r') as f:
+    nuplan_config = yaml.safe_load(f)
 NUPLAN_DATA_ROOT = nuplan_config['NUPLAN_DATA_ROOT']
 NUPLAN_DB_FILES = nuplan_config['NUPLAN_DB_FILES']
 NUPLAN_SENSOR_ROOT = nuplan_config['NUPLAN_SENSOR_ROOT']

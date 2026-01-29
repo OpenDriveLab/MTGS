@@ -177,21 +177,23 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=0)
     args = parser.parse_args()
 
-    if isinstance(args.navsim_config, str):
-        navsim_configs = [args.navsim_config]
-    else:
-        navsim_configs = args.navsim_config
-
     selected_tokens = []
-    for navsim_config in navsim_configs:
-        navsim_config = yaml.load(open(navsim_config, 'r'), Loader=yaml.FullLoader)
+    for navsim_config in args.navsim_config:
+        with open(navsim_config, 'r') as f:
+            navsim_config = yaml.safe_load(f)
         selected_tokens.extend(navsim_config['tokens'])
     selected_tokens = set(selected_tokens)
 
     if not os.path.exists(args.data_root):
         os.makedirs(args.data_root, exist_ok=True)
-        os.system(f"ln -s {os.path.abspath('data/MTGS/nuplan_log_infos.jsonl')} {args.data_root}/nuplan_log_infos.jsonl")
-        os.system(f"ln -s {os.path.abspath('data/MTGS/ego_masks')} {args.data_root}/ego_masks")
+        abs_log_infos = os.path.abspath('data/MTGS/nuplan_log_infos.jsonl')
+        target_log_infos = os.path.join(args.data_root, 'nuplan_log_infos.jsonl')
+        if not os.path.islink(target_log_infos) and not os.path.exists(target_log_infos):
+            os.symlink(abs_log_infos, target_log_infos)
+        abs_ego_masks = os.path.abspath('data/MTGS/ego_masks')
+        target_ego_masks = os.path.join(args.data_root, 'ego_masks')
+        if not os.path.islink(target_ego_masks) and not os.path.exists(target_ego_masks):
+            os.symlink(abs_ego_masks, target_ego_masks)
 
     with jsonlines.open(os.path.join(args.data_root, 'nuplan_log_infos.jsonl'), 'r') as reader:
         log_name2lidar_pc_token = {item['log_name']: item for item in reader}

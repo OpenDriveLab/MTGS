@@ -5,6 +5,7 @@
 #-------------------------------------------------------------------------------#
 import os
 import argparse
+import shutil
 from nuplan_scripts.utils.config import load_config, RoadBlockConfig
 from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
 
@@ -17,10 +18,18 @@ if __name__ == '__main__':
     video_scene = VideoScene(config)
 
     data_root = video_scene.data_root
-    os.system(f"rm -rf {data_root}/{config.road_block_name}/masks")
-    os.system(f"rm -rf {data_root}/{config.road_block_name}/depth")
-    os.system(f"rm -rf {data_root}/{config.road_block_name}/registration_results")
-    os.system(f"rm -rf {data_root}/{config.road_block_name}/colmap")
-    os.system(f"rm -rf {data_root}/{config.road_block_name}/instance_point_cloud")
-    os.system(f"rm -rf {data_root}/{config.road_block_name}/rgb_point_cloud")
-    os.system(f"rm -rf {data_root}/{config.road_block_name}/sfm_point_cloud")
+
+    folders_to_remove = [
+        "masks",
+        "depth",
+        "registration_results",
+        "colmap",
+        "instance_point_cloud",
+        "rgb_point_cloud",
+        "sfm_point_cloud"
+    ]
+
+    for folder in folders_to_remove:
+        dir_path = os.path.join(data_root, config.road_block_name, folder)
+        if os.path.exists(dir_path):
+            shutil.rmtree(dir_path)
