@@ -46,7 +46,19 @@ Token List (NAVSIM filter)
 
 ## Quick Start
 
-This tutorial assumes you are familiar with the [NAVSIM benchmark](https://github.com/autonomousvision/navsim), a popular benchmark for end-to-end autonomous driving on nuPlan/OpenScene.
+The [NAVSIM benchmark](https://github.com/autonomousvision/navsim) defines multiple scenario filters for nuPlan (e.g., `navtrain`, `navtest`). In this tutorial, we use the [`navtrain` filter](https://raw.githubusercontent.com/autonomousvision/navsim/refs/heads/main/navsim/planning/script/config/common/train_test_split/scene_filter/navtrain.yaml) as an example to demonstrate the auto reconstruction pipeline.
+
+### Step 0: Prerequisites
+
+Before running the auto reconstruction pipeline, make sure you have:
+
+1. **Installed MTGS** - Follow the [Installation Guide](install.md) to set up the environment
+2. **Prepared the nuPlan dataset** - Follow the [Prepare Data Guide](prepare_dataset.md) to download and preprocess the nuPlan dataset
+
+Verify your setup by checking that the following paths exist:
+- `data/nuplan/` - nuPlan raw data
+- `data/MTGS/nuplan_log_infos.jsonl` - Log information file
+- `data/MTGS/ego_masks/` - Ego vehicle masks
 
 ### Step 1: Generate Configs from NAVSIM Token List
 
@@ -55,8 +67,8 @@ Generate `FrameCentralConfig` files from NAVSIM filter configs. The script autom
 ```bash
 python -m nuplan_scripts.auto_reconstruction.generate_configs_from_navsim_filter \
     --navsim_config path/to/navtrain.yaml \
-    --data_root data/auto_reconstruction/navtrain \
-    --output_dir data/auto_reconstruction/navtrain/configs \
+    --data_root data/auto_reconstruction/data/navtrain \
+    --output_dir data/auto_reconstruction/config/navtrain \
     --num_workers 32
 ```
 
@@ -75,18 +87,18 @@ Launch the distributed reconstruction pipeline:
 
 ```bash
 python -m nuplan_scripts.auto_reconstruction.multi_gpu_auto_recon \
-    --config-dir data/auto_reconstruction/navtrain/configs \
-    --output-dir data/auto_reconstruction/navtrain \
-    --export-dir data/export_dir/navtrain \
+    --config_dir data/auto_reconstruction/config/navtrain \
+    --output_dir data/auto_reconstruction/data/navtrain \
+    --export_dir data/auto_reconstruction/export/navtrain \
     --workers 12
 ```
 
 **Arguments:**
 | Argument | Description |
 |----------|-------------|
-| `--config-dir` | Directory containing generated config files |
-| `--output-dir` | Output directory for reconstruction results |
-| `--export-dir` | Export directory for portable checkpoints |
+| `--config_dir` | Directory containing generated config files |
+| `--output_dir` | Output directory for reconstruction results |
+| `--export_dir` | Export directory for portable checkpoints |
 | `--workers` | Number of CPU workers per task (default: 12) |
 
 **GPU Control:**
@@ -130,7 +142,7 @@ Logs are saved in the output directory for debugging.
 After reconstruction, the export directory contains:
 
 ```
-export_dir/
+export/navtrain/
 ├── assets/
 │   ├── {config_id}/
 │   │   ├── background/
@@ -150,9 +162,9 @@ To run reconstruction for a single config:
 
 ```bash
 bash nuplan_scripts/auto_reconstruction/recon_single_config.sh \
-    --config path/to/config.yaml \
-    --export-dir path/to/export \
-    --output-dir path/to/output \
+    --config data/auto_reconstruction/config/navtrain/{config_id}.yaml \
+    --output-dir data/auto_reconstruction/data/navtrain/{config_id} \
+    --export-dir data/auto_reconstruction/export/navtrain \
     --workers 12
 ```
 
@@ -162,7 +174,7 @@ To render and evaluate an existing reconstruction:
 
 ```bash
 python -m nuplan_scripts.auto_reconstruction.render_reconstruction \
-    --config path/to/config.yaml
+    --config data/auto_reconstruction/config/navtrain/{config_id}.yaml
 ```
 
 ### Export Reconstruction
@@ -171,8 +183,8 @@ To export a reconstruction to portable checkpoint:
 
 ```bash
 python -m nuplan_scripts.auto_reconstruction.export_reconstruction \
-    --config path/to/config.yaml \
-    --output_dir path/to/export
+    --config data/auto_reconstruction/config/navtrain/{config_id}.yaml \
+    --output_dir data/auto_reconstruction/export/navtrain
 ```
 
 ## Troubleshooting
