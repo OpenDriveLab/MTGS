@@ -645,7 +645,7 @@ class MTGSSceneModel(Model):
             opacities=collected_gaussians['opacities'],
             colors=render_colors,
             viewmats=viewmat,  # [1, 4, 4]
-            Ks=camera.get_intrinsics_matrices().cuda(),  # [1, 3, 3]
+            Ks=camera.get_intrinsics_matrices().to(self.device),  # [1, 3, 3]
             width=W,
             height=H,
             tile_size=BLOCK_WIDTH,

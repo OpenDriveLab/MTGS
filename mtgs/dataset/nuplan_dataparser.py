@@ -282,10 +282,7 @@ class NuplanDataParser(DataParser):
                         pose = ego2global @ cam2ego
 
                     image_filenames.append(Path(
-                        os.path.join(
-                            video_scene.raw_image_path,
-                            cam_info['data_path']
-                        )
+                        video_scene.runtime_image_path(cam_info['data_path'])
                     ))
 
                     if self.config.undistort_images == "optimal":
@@ -354,7 +351,7 @@ class NuplanDataParser(DataParser):
 
                     lidar2cams.append(lidar2cam)    # opencv camera
                     lidar_paths.append(
-                        os.path.join(video_scene.raw_lidar_path, info['lidar_path'])
+                        video_scene.runtime_lidar_path(info['lidar_path'])
                     )
 
                     v_adjust_factors.append(
@@ -399,7 +396,7 @@ class NuplanDataParser(DataParser):
         poses[:, :3, 3] *= self.config.scale_factor
 
         if self.config.load_cam_optim_from is not None:
-            model = torch.load(self.config.load_cam_optim_from, map_location='cpu')
+            model = torch.load(self.config.load_cam_optim_from, map_location='cpu', weights_only=False)
             pose_adj = model['pipeline'][self.config.cam_optim_key]
             if pose_adj.shape[0] != poses.shape[0]:
                 CONSOLE.log(f"[WARNING] pose_adj shape {pose_adj.shape[0]} does not match poses shape {poses.shape[0]}")

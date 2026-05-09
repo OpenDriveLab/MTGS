@@ -1,16 +1,23 @@
 from functools import partial
 from typing import Optional
+import warnings
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
-from xformers.components.attention import NystromAttention
+
+try:
+    from xformers.components.attention import NystromAttention as _XFormersNystromAttention
+except ImportError:
+    _XFormersNystromAttention = None
 
 from .attention import AttentionBlock
 
 
 class NystromBlock(AttentionBlock):
+    _warned_missing_impl = False
+
     def __init__(
         self,
         dim: int,
@@ -32,9 +39,19 @@ class NystromBlock(AttentionBlock):
             layer_scale=layer_scale,
             context_dim=context_dim,
         )
-        self.attention_fn = NystromAttention(
-            num_landmarks=128, num_heads=num_heads, dropout=dropout
-        )
+        self.attention_fn = None
+        if _XFormersNystromAttention is not None:
+            self.attention_fn = _XFormersNystromAttention(
+                num_landmarks=128, num_heads=num_heads, dropout=dropout
+            )
+        elif not NystromBlock._warned_missing_impl:
+            warnings.warn(
+                'xformers.components.attention.NystromAttention is unavailable; '
+                'falling back to standard scaled dot-product attention.',
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            NystromBlock._warned_missing_impl = True
 
     def attn(
         self,
@@ -45,6 +62,16 @@ class NystromBlock(AttentionBlock):
         pos_embed_context: Optional[torch.Tensor] = None,
         rope: Optional[nn.Module] = None,
     ) -> torch.Tensor:
+        if self.attention_fn is None:
+            return super().attn(
+                x,
+                attn_bias=attn_bias,
+                context=context,
+                pos_embed=pos_embed,
+                pos_embed_context=pos_embed_context,
+                rope=rope,
+            )
+
         x = self.norm_attnx(x)
         context = self.norm_attnctx(context)
         k, v = rearrange(
@@ -68,7 +95,7 @@ class NystromBlock(AttentionBlock):
                 k = k + pos_embed_context
 
         if self.cosine:
-            q, k = map(partial(F.normalize, p=2, dim=-1), (q, k))  # cosine sim
+            q, k = map(partial(F.normalize, p=2, dim=-1), (q, k))
         x = self.attention_fn(q, k, v, key_padding_mask=attn_bias)
         x = rearrange(x, "b n h d -> b n (h d)")
         x = self.out(x)

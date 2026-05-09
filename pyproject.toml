@@ -7,7 +7,7 @@ readme = "README.md"
 license = {text="Apache 2.0"}
 
 [tool.setuptools.packages.find]
-include = ["mtgs*"]
+include = ["mtgs*", "nuplan_scripts*"]
 
 [tool.ruff]
 line-length = 120

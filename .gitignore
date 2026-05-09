@@ -138,3 +138,14 @@ work_dirs
 outputs
 experiments
 renders
+
+.vscode
+thirdparty/gsplat/
+thirdparty/gsplat-mps/**/*.bak
+thirdparty/gsplat-mps/.clang-format
+thirdparty/gsplat-mps/.clangd_template
+thirdparty/gsplat-mps/.github/
+thirdparty/gsplat-mps/.gitignore
+thirdparty/gsplat-mps/.gitmodules
+thirdparty/gsplat-mps/docs/
+thirdparty/gsplat-mps/examples/

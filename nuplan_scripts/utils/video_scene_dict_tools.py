@@ -89,6 +89,10 @@ class VideoScene:
         return self.config.data_root
 
     @property
+    def data_source(self):
+        return getattr(self.config, 'data_source', 'nuplan')
+
+    @property
     def sub_data_root(self):
         return f'{self.data_root}/{self.name}'
 
@@ -137,6 +141,37 @@ class VideoScene:
             return f'{self.sub_data_root}/images/raw'
         else:
             return NUPLAN_SENSOR_ROOT
+
+    def _resolve_navsim_source_path(self, root: str, relative_path: str):
+        relative_path = relative_path.lstrip('/').replace('\\', '/')
+        navsim_sensor_subdir = getattr(self.config, 'navsim_sensor_subdir', '')
+        if navsim_sensor_subdir:
+            prefix = navsim_sensor_subdir.rstrip('/') + '/'
+            if not relative_path.startswith(prefix):
+                relative_path = prefix + relative_path
+        return os.path.join(root, relative_path)
+
+    def source_lidar_path(self, relative_path: str):
+        if self.data_source == 'navsim':
+            root = getattr(self.config, 'navsim_lidar_sensor_root', '') or NUPLAN_SENSOR_ROOT
+            return self._resolve_navsim_source_path(root, relative_path)
+        return os.path.join(NUPLAN_SENSOR_ROOT, relative_path)
+
+    def source_image_path(self, relative_path: str):
+        if self.data_source == 'navsim':
+            root = getattr(self.config, 'navsim_camera_sensor_root', '') or NUPLAN_SENSOR_ROOT
+            return self._resolve_navsim_source_path(root, relative_path)
+        return os.path.join(NUPLAN_SENSOR_ROOT, relative_path)
+
+    def runtime_lidar_path(self, relative_path: str):
+        if self.config.collect_raw:
+            return os.path.join(self.raw_lidar_path, relative_path)
+        return self.source_lidar_path(relative_path)
+
+    def runtime_image_path(self, relative_path: str):
+        if self.config.collect_raw:
+            return os.path.join(self.raw_image_path, relative_path)
+        return self.source_image_path(relative_path)
 
     @property
     def undistorted_image_path(self):

@@ -1,0 +1,26 @@
+!!python/object:MTGS.nuplan_scripts.utils.config.FrameCentralConfig
+central_log: 2021.06.14.18.33.41_veh-35_03901_04264
+central_tokens:
+- add6e2410d5b5086
+city: us-nv-las-vegas-strip
+collect_raw: false
+data_root: ./data/navmini_mtgs
+data_source: navsim
+exclude_bad_registration: false
+expand_buffer: 0
+interval: 1
+multi_traversal_mode: reconstruction
+navsim_camera_sensor_root: ../openscene_camera/openscene-v1.1/sensor_blobs
+navsim_lidar_sensor_root: ../openscene_lidar/openscene-v1.1/sensor_blobs
+navsim_meta_root: ../mini_navsim_logs/meta_datas/mini
+navsim_sensor_subdir: mini
+reconstruct_buffer: 0
+road_block: !!python/tuple
+- 664297
+- 3996258
+- 664377
+- 3996302
+road_block_name: 2021.06.14.18.33.41_veh-35_03901_04264-add6e2410d5b5086
+selected_videos: !!python/tuple []
+split: all
+use_colmap_ba: false

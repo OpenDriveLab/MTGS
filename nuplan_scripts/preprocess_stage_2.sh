@@ -5,6 +5,9 @@ NUM_WORKERS=$2
 NUM_GPUS=$3
 PORT=${4:-29500}
 
+REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+export PYTHONPATH="$REPO_ROOT/thirdparty/kiss-icp/python${PYTHONPATH:+:$PYTHONPATH}"
+
 print_banner() {
     echo "=================================="
     echo "Executing: $1"

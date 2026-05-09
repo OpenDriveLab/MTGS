@@ -42,9 +42,24 @@ class RoadBlockConfig(BaseConfig):
 
     road_block: Tuple
 
-    city: Literal['sg-one-north', 'us-ma-boston', 'us-na-las-vegas-strip', 'us-pa-pittsburgh-hazelwood']
+    city: Literal['sg-one-north', 'us-ma-boston', 'us-na-las-vegas-strip', 'us-nv-las-vegas-strip', 'us-pa-pittsburgh-hazelwood']
 
     data_root: str = "./data/MTGS"
+
+    data_source: Literal['nuplan', 'navsim'] = 'nuplan'
+    """source dataset backend"""
+
+    navsim_meta_root: str = ""
+    """root directory containing navsim meta-data pickle files"""
+
+    navsim_camera_sensor_root: str = ""
+    """root directory containing camera sensor blobs"""
+
+    navsim_lidar_sensor_root: str = ""
+    """root directory containing lidar sensor blobs"""
+
+    navsim_sensor_subdir: str = ""
+    """optional subdirectory inserted before relative sensor paths, e.g. 'mini'"""
 
     interval: int = 1
     """interval = 1 -> 10Hz """

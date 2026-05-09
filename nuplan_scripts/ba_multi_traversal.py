@@ -25,9 +25,6 @@ from nuplan_scripts.utils.camera_utils import field_of_view_intrinsic
 from nuplan_scripts.utils.colmap_utils.gen_colmap_db import create_colmap_database
 from nuplan_scripts.utils.colmap_utils.read_write_model import read_model
 from nuplan_scripts.utils.colmap_utils.align_model import compute_transformation_matrix_with_scaling
-from nuplan_scripts.utils.constants import NUPLAN_SENSOR_ROOT
-
-
 def copy_ego_masks(video_scene: VideoScene):
     data_root = video_scene.data_root
     raw_mask_path = os.path.join(data_root, 'ego_masks/raw')
@@ -121,7 +118,7 @@ def create_colmap_model(video_scene: VideoScene, video_scene_dict, colmap_path):
             for cam_name in info['cams']:
                 cam_info = info['cams'][cam_name]
 
-                data_path = os.path.join(NUPLAN_SENSOR_ROOT, cam_info['data_path'])
+                data_path = video_scene.runtime_image_path(cam_info['data_path'])
 
                 sem_mask_path = os.path.join(
                     video_scene.raw_mask_path,
@@ -238,7 +235,7 @@ def create_sparse_colmap_model(video_scene: VideoScene, video_scene_dict, colmap
             for cam in info['cams']:
                 cam_info = info['cams'][cam]
 
-                data_path = os.path.join(NUPLAN_SENSOR_ROOT, cam_info['data_path'])
+                data_path = video_scene.runtime_image_path(cam_info['data_path'])
 
                 cam2ego = Quaternion(cam_info['sensor2ego_rotation']).transformation_matrix
                 cam2ego[:3, 3] = cam_info['sensor2ego_translation']

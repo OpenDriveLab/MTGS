@@ -20,8 +20,6 @@ from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
 from nuplan_scripts.utils.nuplan_utils_custom import load_lidar, get_rgb_point_cloud, get_semantic_point_cloud, adjust_brightness_single_frame, adjust_brightness
 from nuplan_scripts.utils.stack_point_cloud_utils import extract_frame_background_instance_lidar, accumulate_background_box_point
 from nuplan_scripts.utils.camera_utils import undistort_image_with_cam_info
-from nuplan_scripts.utils.constants import NUPLAN_SENSOR_ROOT
-
 class StackRGBPointCloud:
 
     class PseudoDataset(Dataset):
@@ -47,7 +45,7 @@ class StackRGBPointCloud:
                 else:
                     intrinsic = cam_info['cam_intrinsic']
 
-                cam_path = os.path.join(NUPLAN_SENSOR_ROOT, cam_info['data_path'])
+                cam_path = self.video_scene.runtime_image_path(cam_info['data_path'])
                 assert os.path.exists(cam_path), f'{cam_path} does not exist.'
                 image = cv2.imread(cam_path)
                 image = undistort_image_with_cam_info(image, cam_info, interpolation='linear', mode='keep_focal_length')
@@ -80,14 +78,14 @@ class StackRGBPointCloud:
 
             # use combiled lidar_point_cloud to adjust brightness
             lidar_points = load_lidar(
-                os.path.join(NUPLAN_SENSOR_ROOT, info['lidar_path']), remove_close=False, only_top=False)
+                self.video_scene.runtime_lidar_path(info['lidar_path']), remove_close=False, only_top=False)
             adjust_brightness_single_frame(info, lidar2imgs, undistorted_images, lidar_points)
             for idx, cam_info in enumerate(info['cams'].values()):
                 adjust_factor = cam_info['v_adjust']
                 undistorted_images[idx] = adjust_brightness(undistorted_images[idx], adjust_factor)
 
             top_lidar_points = load_lidar(
-                os.path.join(NUPLAN_SENSOR_ROOT, info['lidar_path']), remove_close=False, only_top=True)
+                self.video_scene.runtime_lidar_path(info['lidar_path']), remove_close=False, only_top=True)
             info['back_instance_info'] = extract_frame_background_instance_lidar(info, l2g=False, points=top_lidar_points)
 
             # for background points

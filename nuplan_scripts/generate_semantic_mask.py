@@ -6,6 +6,8 @@
 import os
 import argparse
 
+os.environ.setdefault("USE_TF", "0")
+os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
 
 import cv2
 import numpy as np
@@ -19,8 +21,6 @@ from accelerate.utils import tqdm
 
 from nuplan_scripts.utils.config import load_config, RoadBlockConfig
 from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
-from nuplan_scripts.utils.constants import NUPLAN_SENSOR_ROOT
-
 model_path = "ckpts/huggingface/facebook/mask2former-swin-large-cityscapes-semantic"
 
 if __name__ == '__main__':
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     with distributed_state.split_between_processes(total_cams) as partial_frames:
         for cam_info in partial_frames:
-            image_path = os.path.join(NUPLAN_SENSOR_ROOT, cam_info['data_path'])
+            image_path = video_scene.runtime_image_path(cam_info['data_path'])
             mask_path = os.path.join(
                 video_scene.raw_mask_path,
                 video_scene.mask_suffix_cityscape,

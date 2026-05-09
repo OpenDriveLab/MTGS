@@ -130,7 +130,7 @@ class VanillaGaussianSplattingModel(torch.nn.Module):
             self._skip_current_model(dim_sh)
             return
 
-        shs = torch.zeros((points_3d['rgb'].shape[0], dim_sh, 3)).float().cuda()
+        shs = torch.zeros((points_3d['rgb'].shape[0], dim_sh, 3)).float().to(points_3d['rgb'].device)
         if self.sh_degree > 0:
             shs[:, 0, :3] = RGB2SH(points_3d['rgb'] / 255)
             shs[:, 1:, 3:] = 0.0

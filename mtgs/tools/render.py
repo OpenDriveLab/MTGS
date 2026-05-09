@@ -10,6 +10,7 @@ from __future__ import annotations
 import gzip
 import json
 import os
+import pickle
 import sys
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
@@ -21,11 +22,13 @@ import numpy as np
 import torch
 import tyro
 from jaxtyping import Float
+from pyquaternion import Quaternion
 from rich import box, style
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.table import Table
 from torch import Tensor
+from torch.nn import functional as F
 from typing_extensions import Annotated
 import yaml
 
@@ -41,6 +44,8 @@ from nerfstudio.model_components import renderers
 from nerfstudio.pipelines.base_pipeline import Pipeline
 from nerfstudio.utils import colormaps, install_checks
 from nerfstudio.utils.rich_utils import CONSOLE, ItersPerSecColumn
+from nuplan_scripts.utils.config import load_config
+from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
 
 
 def _render_trajectory_video(
@@ -51,13 +56,14 @@ def _render_trajectory_video(
     crop_data: Optional[CropData] = None,
     rendered_resolution_scaling_factor: float = 1.0,
     seconds: float = 5.0,
-    output_format: Literal["images", "video"] = "video",
+    output_format: Literal["images", "video", "none"] = "video",
     image_format: Literal["jpeg", "png"] = "jpeg",
     jpeg_quality: int = 100,
     depth_near_plane: Optional[float] = None,
     depth_far_plane: Optional[float] = None,
     colormap_options: colormaps.ColormapOptions = colormaps.ColormapOptions(),
     filenames: Optional[List[str]] = None,
+    per_camera_metadata: Optional[List[Dict[str, Any]]] = None,
 ) -> None:
     """Helper function to create a video of the spiral trajectory.
 
@@ -104,6 +110,8 @@ def _render_trajectory_video(
         # but we don't know how big the video file will be, so it's not certain!)
     if filenames is not None:
         assert len(filenames) == len(cameras), "filenames must have the same length as cameras"
+    if per_camera_metadata is not None:
+        assert len(per_camera_metadata) == len(cameras), "per_camera_metadata must have the same length as cameras"
 
     with ExitStack() as stack:
         writer = None
@@ -115,6 +123,10 @@ def _render_trajectory_video(
                     obb_box = crop_data.obb
 
                 camera = cameras[camera_idx : camera_idx + 1]
+                if per_camera_metadata is not None:
+                    if camera.metadata is None:
+                        camera.metadata = {}
+                    camera.metadata.update(per_camera_metadata[camera_idx])
                 if crop_data is not None:
                     with renderers.background_color_override_context(
                         crop_data.background_color.to(pipeline.device)
@@ -193,11 +205,152 @@ def _render_trajectory_video(
     )
     if output_format == "video":
         table.add_row("Video", str(output_filename))
-    else:
+    elif output_format == "images":
         table.add_row("Images", str(output_image_dir))
-    CONSOLE.print(Panel(table, title="[bold][green]:tada: Render Complete :tada:[/bold]", expand=False))
+    if output_format != "none":
+        CONSOLE.print(Panel(table, title="[bold][green]:tada: Render Complete :tada:[/bold]", expand=False))
 
     return render_images
+
+
+def _resolve_video_scene_pkl(config: TrainerConfig, override: Optional[Path]) -> Optional[Path]:
+    if override is not None:
+        return override
+    try:
+        dataparser_cfg = config.pipeline.datamanager.dataparser
+        road_block_cfg = load_config(Path(dataparser_cfg.road_block_config).as_posix())
+        video_scene = VideoScene(road_block_cfg)
+        return Path(video_scene.pickle_path)
+    except Exception as exc:
+        CONSOLE.print(f"Could not resolve video_scene_dict.pkl: {exc}", style="yellow")
+        return None
+
+
+def _load_frame_info_map(video_scene_pkl: Path, travel_id: int) -> Dict[str, Dict[str, Any]]:
+    with open(video_scene_pkl, "rb") as f:
+        video_scene_dict = pickle.load(f)
+    matches = [k for k in video_scene_dict.keys() if k.endswith(f"-{travel_id}")]
+    if not matches:
+        raise ValueError(f"No video_token found for travel_id={travel_id} in {video_scene_pkl}")
+    if len(matches) > 1:
+        CONSOLE.print(f"Multiple video_tokens match travel_id={travel_id}, using {matches[0]}", style="yellow")
+    frame_infos = video_scene_dict[matches[0]]["frame_infos"]
+    return {info["token"]: info for info in frame_infos}
+
+
+def _default_sticker_layout() -> List[List[Optional[str]]]:
+    return [
+        ["CAM_L0", "CAM_F0", "CAM_R0"],
+        ["CAM_L1", None, "CAM_R1"],
+        ["CAM_L2", "CAM_B0", "CAM_R2"],
+    ]
+
+
+def _resolve_sticker_layout(
+    camera_names: List[str],
+    layout_rows: List[List[Optional[str]]],
+) -> Tuple[Dict[str, Tuple[int, int]], int, int]:
+    rows = len(layout_rows)
+    cols = max((len(row) for row in layout_rows), default=0)
+    positions: Dict[str, Tuple[int, int]] = {}
+    for row_idx, row in enumerate(layout_rows):
+        for col_idx, name in enumerate(row):
+            if name is None:
+                continue
+            if name in camera_names:
+                positions[name] = (row_idx, col_idx)
+
+    unknown = [name for name in camera_names if name not in positions]
+    if unknown:
+        CONSOLE.print(f"Placing unknown cameras at bottom: {unknown}", style="yellow")
+        base_row = rows
+        for idx, name in enumerate(unknown):
+            positions[name] = (base_row + idx // cols, idx % cols)
+        rows += (len(unknown) + cols - 1) // cols
+    return positions, rows, cols
+
+
+def _resize_image(image: np.ndarray, scale: float) -> np.ndarray:
+    if scale == 1.0:
+        return image
+    if scale <= 0.0:
+        raise ValueError("sticker_scale must be > 0")
+    tensor = torch.from_numpy(image).permute(2, 0, 1).unsqueeze(0)
+    if not torch.is_floating_point(tensor):
+        tensor = tensor.float()
+    tensor = F.interpolate(tensor, scale_factor=scale, mode="bilinear", align_corners=False)
+    return tensor.squeeze(0).permute(1, 2, 0).cpu().numpy()
+
+
+def _compose_sticker_video(
+    rendered: Dict[str, List[np.ndarray]],
+    sticker_scale: float,
+    padding: int,
+    background_color: Tuple[int, int, int],
+    layout_rows: Optional[List[List[Optional[str]]]] = None,
+) -> List[np.ndarray]:
+    if not rendered:
+        raise ValueError("No rendered frames provided for sticker composition.")
+
+    layout_rows = layout_rows or _default_sticker_layout()
+    camera_names = list(rendered.keys())
+    positions, rows, cols = _resolve_sticker_layout(camera_names, layout_rows)
+    if cols <= 0 or rows <= 0:
+        raise ValueError("Sticker layout must have at least one cell.")
+    if padding < 0:
+        raise ValueError("padding must be >= 0")
+
+    frame_counts = [len(frames) for frames in rendered.values()]
+    num_frames = min(frame_counts)
+    if num_frames == 0:
+        raise ValueError("Rendered frames are empty.")
+    if len(set(frame_counts)) != 1:
+        CONSOLE.print("Mismatched frame counts across cameras; using shortest sequence.", style="yellow")
+
+    sample_frame = next(iter(rendered.values()))[0]
+    sample_sizes = [rendered[name][0].shape[:2] for name in positions.keys()]
+    max_h = max(h for h, _ in sample_sizes)
+    max_w = max(w for _, w in sample_sizes)
+    cell_h = int(round(max_h * sticker_scale))
+    cell_w = int(round(max_w * sticker_scale))
+    if cell_h <= 0 or cell_w <= 0:
+        raise ValueError("sticker_scale results in non-positive cell size.")
+
+    canvas_h = rows * cell_h + (rows + 1) * padding
+    canvas_w = cols * cell_w + (cols + 1) * padding
+
+    if np.issubdtype(sample_frame.dtype, np.floating):
+        bg = np.array(background_color, dtype=sample_frame.dtype) / 255.0
+    else:
+        bg = np.array(background_color, dtype=sample_frame.dtype)
+
+    composed = []
+    for frame_idx in range(num_frames):
+        canvas = np.empty((canvas_h, canvas_w, 3), dtype=sample_frame.dtype)
+        canvas[:, :] = bg
+        for cam_name, (row_idx, col_idx) in positions.items():
+            frame = rendered[cam_name][frame_idx]
+            frame = _resize_image(frame, sticker_scale)
+            h, w = frame.shape[:2]
+            y0 = padding + row_idx * (cell_h + padding) + (cell_h - h) // 2
+            x0 = padding + col_idx * (cell_w + padding) + (cell_w - w) // 2
+            canvas[y0 : y0 + h, x0 : x0 + w] = frame
+        composed.append(canvas)
+
+    return composed
+
+
+def _apply_camera_offset_camera_coords(
+    camera_to_worlds: torch.Tensor,
+    offset_cam: Tuple[float, float, float],
+) -> torch.Tensor:
+    if offset_cam == (0.0, 0.0, 0.0):
+        return camera_to_worlds
+    offset = torch.tensor(offset_cam, dtype=camera_to_worlds.dtype, device=camera_to_worlds.device)
+    offset_world = torch.einsum("bij,j->bi", camera_to_worlds[..., :3, :3], offset)
+    updated = camera_to_worlds.clone()
+    updated[..., :3, 3] = updated[..., :3, 3] + offset_world
+    return updated
 
 def find_ckpt_path(config: TrainerConfig) -> Tuple[Path, int]:
     assert config.load_dir is not None
@@ -247,13 +400,18 @@ def eval_setup(
 
 
     # setup pipeline (which includes the DataManager)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     pipeline = config.pipeline.setup(device=device, test_mode=test_mode)
     assert isinstance(pipeline, Pipeline)
     pipeline.eval()
 
     # load checkpointed information
-    loaded_state = torch.load(checkpoint_path, map_location="cpu")
+    loaded_state = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     pipeline.load_pipeline(loaded_state["pipeline"], loaded_state["step"])
 
     return config, pipeline, checkpoint_path, loaded_state["step"]
@@ -514,20 +672,15 @@ class RenderInterpolated(BaseRender):
                 )
                 rendered[cam_name] = images
 
-            # concat and save videos
-            videos = []
-            for cam in ('CAM_L0', 'CAM_F0', 'CAM_R0'):
-                video = rendered[cam]
-                videos.append(video)
-            videos = np.concatenate(videos, axis=-2)
-            media.write_video(output_path / "concat_front.mp4", videos, fps=self.frame_rate)
+            if all(cam in rendered for cam in ('CAM_L0', 'CAM_F0', 'CAM_R0')):
+                videos = [rendered[cam] for cam in ('CAM_L0', 'CAM_F0', 'CAM_R0')]
+                videos = np.concatenate(videos, axis=-2)
+                media.write_video(output_path / "concat_front.mp4", videos, fps=self.frame_rate)
 
-            videos = []
-            for cam in ('CAM_R2', 'CAM_B0', 'CAM_L2'):
-                video = rendered[cam]
-                videos.append(video)
-            videos = np.concatenate(videos, axis=-2)
-            media.write_video(output_path / "concat_back.mp4", videos, fps=self.frame_rate)
+            if all(cam in rendered for cam in ('CAM_R2', 'CAM_B0', 'CAM_L2')):
+                videos = [rendered[cam] for cam in ('CAM_R2', 'CAM_B0', 'CAM_L2')]
+                videos = np.concatenate(videos, axis=-2)
+                media.write_video(output_path / "concat_back.mp4", videos, fps=self.frame_rate)
 
         base_output_path = Path()
         if self.output_path is not None:
@@ -548,6 +701,263 @@ class RenderInterpolated(BaseRender):
                 output_path = base_output_path / f"travel_{travel_id}"
                 travel_indices = torch.tensor(cameras_travels[travel_id], dtype=torch.int64)
                 render_travel(output_path, cameras[travel_indices], num_cameras, travel_id)
+        else:
+            render_travel(base_output_path, cameras, num_cameras)
+
+
+@dataclass
+class RenderSticker(BaseRender):
+    """Render a fixed-layout multi-view sticker video on a blank background."""
+
+    pose_source: Literal["eval", "train"] = "eval"
+    """Pose source to render."""
+    output_path: Optional[Path] = None
+    """Base output directory."""
+    interpolation_steps: int = 6
+    """Number of interpolation steps between eval dataset cameras. Use 1 for no interpolation."""
+    order_poses: bool = False
+    """Whether to order camera poses by proximity."""
+    frame_rate: int = 60
+    """Frame rate of the output video."""
+    output_name: str = "sticker.mp4"
+    """Output file name for the composed video."""
+    sticker_scale: float = 0.5
+    """Scale factor for each sticker view."""
+    padding: int = 10
+    """Padding (pixels) between stickers and canvas edge."""
+    background_color: Tuple[int, int, int] = (255, 255, 255)
+    """Background color as RGB 0-255."""
+    camera_offset_cam: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    """Camera offset in camera coordinates (x, y, z)."""
+    retarget_vehicle_token: Optional[str] = None
+    """Track token of the vehicle to retarget during rendering."""
+    retarget_video_scene_pkl: Optional[Path] = None
+    """Override path to video_scene_dict.pkl for retargeting."""
+    retarget_forward: float = 10.0
+    """Forward offset in ego coordinates (meters)."""
+    retarget_lateral: float = 0.0
+    """Lateral offset in ego coordinates (meters). Positive is left."""
+    retarget_up: float = 0.0
+    """Vertical offset in ego coordinates (meters)."""
+    retarget_yaw_deg: float = 90.0
+    """Yaw offset in degrees relative to ego heading."""
+    retarget_frame_start: Optional[int] = None
+    """Start frame index (inclusive) for retargeting."""
+    retarget_frame_end: Optional[int] = None
+    """End frame index (inclusive) for retargeting."""
+    ego_offset_forward: float = 0.0
+    """Ego forward offset in meters (applied to all cameras)."""
+    ego_offset_lateral: float = 0.0
+    """Ego lateral offset in meters. Positive is left."""
+    ego_offset_up: float = 0.0
+    """Ego vertical offset in meters."""
+    ego_offset_video_scene_pkl: Optional[Path] = None
+    """Override path to video_scene_dict.pkl for ego offset."""
+
+    def main(self) -> None:
+        def update_config(config: TrainerConfig) -> TrainerConfig:
+            config.pipeline.datamanager.dataparser.train_split_fraction = 1.0
+            config.pipeline.datamanager.dataparser.cameras = self.multi_view_camera
+            CONSOLE.print(f"Using cams {self.multi_view_camera}.", style="bold green")
+            return config
+
+        config, pipeline, _, _ = eval_setup(
+            self.load_config,
+            eval_num_rays_per_chunk=self.eval_num_rays_per_chunk,
+            test_mode="inference",
+            update_config_callback=update_config,
+        )
+
+        install_checks.check_ffmpeg_installed()
+
+        if self.pose_source == "eval":
+            assert pipeline.datamanager.eval_dataset is not None
+            cameras = pipeline.datamanager.eval_dataset.cameras
+            dataparser_outputs = pipeline.datamanager.eval_dataset._dataparser_outputs
+        else:
+            assert pipeline.datamanager.train_dataset is not None
+            cameras = pipeline.datamanager.train_dataset.cameras
+            dataparser_outputs = pipeline.datamanager.train_dataset._dataparser_outputs
+
+        num_cameras = len(self.multi_view_camera)
+
+        def ego_offset_active() -> bool:
+            return any(
+                value != 0.0 for value in (self.ego_offset_forward, self.ego_offset_lateral, self.ego_offset_up)
+            )
+
+        video_scene_pkl = None
+        frame_info_map = None
+        if self.retarget_vehicle_token is not None or ego_offset_active():
+            override_pkl = self.retarget_video_scene_pkl or self.ego_offset_video_scene_pkl
+            video_scene_pkl = _resolve_video_scene_pkl(config, override_pkl)
+            if video_scene_pkl is None:
+                raise ValueError("retarget/ego offset requires a valid video_scene_dict.pkl")
+
+        def render_travel(
+            output_dir: Path,
+            cameras: Cameras,
+            num_cameras: int,
+            travel_id: Optional[int] = None,
+            original_indices: Optional[List[int]] = None,
+        ) -> None:
+            cam_split = [cameras[i::num_cameras] for i in range(num_cameras)]
+            if self.retarget_vehicle_token is not None or ego_offset_active():
+                if self.interpolation_steps > 1:
+                    raise ValueError("retarget/ego offset requires --interpolation-steps 1")
+                assert travel_id is not None
+                nonlocal frame_info_map
+                if frame_info_map is None:
+                    frame_info_map = _load_frame_info_map(video_scene_pkl, travel_id)
+
+            rendered: Dict[str, List[np.ndarray]] = {}
+            for cam_id, cam_group in enumerate(cam_split):
+                cam_name = self.multi_view_camera[cam_id]
+                per_camera_metadata = None
+                if self.interpolation_steps <= 1:
+                    camera_path = cam_group
+                    seconds = len(cam_group) / self.frame_rate
+                else:
+                    seconds = (self.interpolation_steps * (len(cam_group) - 1) + 1) / self.frame_rate
+                    camera_path = _get_interpolated_camera_path(
+                        cameras=cam_group,
+                        steps=self.interpolation_steps,
+                        order_poses=self.order_poses,
+                    )
+                camera_path.camera_to_worlds = _apply_camera_offset_camera_coords(
+                    camera_path.camera_to_worlds,
+                    self.camera_offset_cam,
+                )
+                metadata: Dict[str, Any] = {"travel_id": travel_id}
+                cam_frame_tokens = None
+                cam_frame_ids = None
+                if self.retarget_vehicle_token is not None or ego_offset_active():
+                    frame_tokens = dataparser_outputs.frame_tokens
+                    frame_ids = dataparser_outputs.frame_ids
+                    if frame_tokens is None or frame_ids is None:
+                        raise ValueError("retarget/ego offset requires frame_tokens and frame_ids in dataparser outputs.")
+                    if original_indices is None:
+                        cam_frame_tokens = frame_tokens[cam_id::num_cameras]
+                        cam_frame_ids = frame_ids[cam_id::num_cameras]
+                    else:
+                        cam_indices = original_indices[cam_id::num_cameras]
+                        cam_frame_tokens = [frame_tokens[idx] for idx in cam_indices]
+                        cam_frame_ids = [frame_ids[idx] for idx in cam_indices]
+
+                if ego_offset_active():
+                    offset_local = np.array(
+                        [self.ego_offset_forward, self.ego_offset_lateral, self.ego_offset_up], dtype=np.float32
+                    )
+                    offsets_world = []
+                    for frame_token in cam_frame_tokens:
+                        frame_info = frame_info_map.get(frame_token)
+                        if frame_info is None:
+                            offsets_world.append([0.0, 0.0, 0.0])
+                            continue
+                        e2g_rot = Quaternion(frame_info["ego2global_rotation"]).rotation_matrix
+                        offsets_world.append(e2g_rot @ offset_local)
+                    offsets_world = torch.tensor(np.array(offsets_world, dtype=np.float32))
+                    camera_path.camera_to_worlds[:, :3, 3] = (
+                        camera_path.camera_to_worlds[:, :3, 3] + offsets_world
+                    )
+
+                if self.retarget_vehicle_token is not None:
+                    per_camera_metadata = []
+                    yaw_offset = np.deg2rad(self.retarget_yaw_deg)
+                    offset_local = np.array([self.retarget_forward, self.retarget_lateral, self.retarget_up], dtype=np.float32)
+                    for frame_token, frame_id in zip(cam_frame_tokens, cam_frame_ids):
+                        frame_info = frame_info_map.get(frame_token)
+                        retarget_entry = {
+                            "frame_idx": int(frame_id),
+                            "retarget_vehicle_token": self.retarget_vehicle_token,
+                            "retarget_mask": False,
+                        }
+                        if frame_info is None:
+                            retarget_entry["retarget_trans"] = torch.zeros(3, dtype=torch.float32)
+                            retarget_entry["retarget_quat"] = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float32)
+                            per_camera_metadata.append(retarget_entry)
+                            continue
+                        active = True
+                        if self.retarget_frame_start is not None and frame_id < self.retarget_frame_start:
+                            active = False
+                        if self.retarget_frame_end is not None and frame_id > self.retarget_frame_end:
+                            active = False
+                        e2g_trans = np.array(frame_info["ego2global_translation"], dtype=np.float32)
+                        e2g_rot = Quaternion(frame_info["ego2global_rotation"]).rotation_matrix
+                        e2g_yaw = Quaternion(frame_info["ego2global_rotation"]).yaw_pitch_roll[0]
+                        target_trans = e2g_rot @ offset_local + e2g_trans
+                        target_yaw = e2g_yaw + yaw_offset
+                        target_quat = Quaternion(axis=[0, 0, 1], angle=target_yaw).q
+                        retarget_entry["retarget_trans"] = torch.tensor(target_trans, dtype=torch.float32)
+                        retarget_entry["retarget_quat"] = torch.tensor(target_quat, dtype=torch.float32)
+                        retarget_entry["retarget_mask"] = active
+                        per_camera_metadata.append(retarget_entry)
+                camera_path.metadata = metadata
+                output_filename = output_dir / f"{cam_name}.mp4"
+                images = _render_trajectory_video(
+                    pipeline,
+                    camera_path,
+                    output_filename=output_filename,
+                    rendered_output_names=self.rendered_output_names,
+                    rendered_resolution_scaling_factor=1.0 / self.downscale_factor,
+                    seconds=seconds,
+                    output_format="none",
+                    image_format=self.image_format,
+                    jpeg_quality=self.jpeg_quality,
+                    depth_near_plane=self.depth_near_plane,
+                    depth_far_plane=self.depth_far_plane,
+                    colormap_options=self.colormap_options,
+                    per_camera_metadata=per_camera_metadata,
+                )
+                rendered[cam_name] = images
+
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_filename = output_dir / self.output_name
+            if output_filename.suffix == "":
+                output_filename = output_filename.with_suffix(".mp4")
+
+            composed = _compose_sticker_video(
+                rendered=rendered,
+                sticker_scale=self.sticker_scale,
+                padding=self.padding,
+                background_color=self.background_color,
+            )
+            media.write_video(output_filename, composed, fps=self.frame_rate)
+
+            table = Table(
+                title=None,
+                show_header=False,
+                box=box.MINIMAL,
+                title_style=style.Style(bold=True),
+            )
+            table.add_row("Sticker Video", str(output_filename))
+            CONSOLE.print(Panel(table, title="[bold][green]:tada: Sticker Render Complete :tada:[/bold]", expand=False))
+
+        base_output_path = Path()
+        if self.output_path is not None:
+            base_output_path = self.output_path
+        else:
+            if hasattr(config, "base_dir"):
+                base_output_path = Path(f"renders/scene_videos/{os.path.basename(config.base_dir)}")
+            else:
+                base_output_path = Path(f"renders/{config.experiment_name}")
+
+        if hasattr(dataparser_outputs, "travel_ids") and dataparser_outputs.travel_ids is not None:
+            travel_ids = dataparser_outputs.travel_ids
+            travel_id_set = list(set(travel_ids))
+            cameras_travels = {k: [] for k in travel_id_set}
+            for idx, travel_id in enumerate(travel_ids):
+                cameras_travels[travel_id].append(idx)
+            for travel_id in travel_id_set:
+                output_dir = base_output_path / f"travel_{travel_id}"
+                travel_indices = torch.tensor(cameras_travels[travel_id], dtype=torch.int64)
+                render_travel(
+                    output_dir,
+                    cameras[travel_indices],
+                    num_cameras,
+                    travel_id,
+                    original_indices=travel_indices.tolist(),
+                )
         else:
             render_travel(base_output_path, cameras, num_cameras)
 
@@ -750,6 +1160,7 @@ Commands = tyro.conf.FlagConversionOff[
     Union[
         Annotated[RenderCameraPath, tyro.conf.subcommand(name="camera-path")],
         Annotated[RenderInterpolated, tyro.conf.subcommand(name="interpolate")],
+        Annotated[RenderSticker, tyro.conf.subcommand(name="sticker")],
         Annotated[DatasetRender, tyro.conf.subcommand(name="dataset")],
     ]
 ]

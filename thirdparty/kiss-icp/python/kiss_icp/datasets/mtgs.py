@@ -13,8 +13,6 @@ from pyquaternion import Quaternion
 from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
 from nuplan_scripts.utils.nuplan_utils_custom import load_lidar, get_semantic_point_cloud
 from nuplan_scripts.utils.camera_utils import undistort_image_with_cam_info
-from nuplan_scripts.utils.constants import NUPLAN_SENSOR_ROOT
-
 class MTGSDataset:
 
     def __init__(
@@ -51,7 +49,7 @@ class MTGSDataset:
         for idx in self.video_order:
             frame_infos = idx2video_scene_dict[idx]["frame_infos"]
             for info in frame_infos:
-                lidar_path = os.path.join(NUPLAN_SENSOR_ROOT, info['lidar_path'])
+                lidar_path = self.video_scene.runtime_lidar_path(info['lidar_path'])
                 if self.filter_semantic:
                     lidar_points = self.get_filtered_lidar(info)
                 else:
@@ -106,7 +104,7 @@ class MTGSDataset:
         undistorted_sem_masks = np.array(undistorted_sem_masks)  # (n_cam, H, W, 1)
         lidar2imgs = np.array(lidar2imgs)  # (n_cam, 4, 4)
         lidar_points = load_lidar(
-            os.path.join(NUPLAN_SENSOR_ROOT, info['lidar_path']), remove_close=False, only_top=True)
+            self.video_scene.runtime_lidar_path(info['lidar_path']), remove_close=False, only_top=True)
         sem_labels, fov_mask_sem = get_semantic_point_cloud(lidar_points, lidar2imgs, undistorted_sem_masks)
         # filter out points in sky, person, rider, car, truck, bus, motorcycle, bicycle
         mask = np.logical_and(fov_mask_sem, sem_labels < 10)

@@ -19,7 +19,7 @@ from nuplan.common.actor_state.state_representation import Point2D
 
 from nuplan_scripts.utils.config import load_config, RoadBlockConfig
 from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
-from nuplan_scripts.utils.constants import NUPLAN_SENSOR_ROOT, NUPLAN_MAP_VERSION, NUPLAN_MAPS_ROOT
+from nuplan_scripts.utils.constants import NUPLAN_MAP_VERSION, NUPLAN_MAPS_ROOT
 
 
 class ExportVideos:
@@ -42,7 +42,7 @@ class ExportVideos:
                     continue
 
                 cam_info = info['cams'][cam]
-                cam_path = os.path.join(NUPLAN_SENSOR_ROOT, cam_info['data_path'])
+                cam_path = video_scene.source_image_path(cam_info['data_path'])
                 image = cv2.imread(cam_path)[..., ::-1]
                 image = cv2.resize(image, (640, 360))
                 images.append(image)

@@ -11,9 +11,6 @@ from torch.utils.data import Dataset, DataLoader
 
 from nuplan_scripts.utils.config import load_config, RoadBlockConfig
 from nuplan_scripts.utils.video_scene_dict_tools import VideoScene
-from nuplan_scripts.utils.constants import NUPLAN_SENSOR_ROOT
-
-
 class CollectRawData:
 
     class PseudoDataset(Dataset):
@@ -28,7 +25,7 @@ class CollectRawData:
             if not os.path.exists(raw_lidar_path):
                 os.makedirs(os.path.dirname(raw_lidar_path), exist_ok=True)
                 shutil.copy2(
-                    os.path.join(NUPLAN_SENSOR_ROOT, frame_info['lidar_path']),
+                    self.video_scene.source_lidar_path(frame_info['lidar_path']),
                     raw_lidar_path
                 )
 
@@ -38,7 +35,7 @@ class CollectRawData:
                     continue
                 os.makedirs(os.path.dirname(raw_path), exist_ok=True)
                 shutil.copy2(
-                    os.path.join(NUPLAN_SENSOR_ROOT, cam_info['data_path']),
+                    self.video_scene.source_image_path(cam_info['data_path']),
                     raw_path
                 )
 

@@ -51,9 +51,7 @@ class MetricDepthError:
         def __getitem__(self, idx):
             info = self.data_infos[idx]
             ref_errors = {}
-            lidar_pts = load_lidar(
-                os.path.join(video_scene.raw_lidar_path, info['lidar_path'])
-            )
+            lidar_pts = load_lidar(video_scene.runtime_lidar_path(info['lidar_path']))
             lidar_pts_xyz1 = np.concatenate([lidar_pts, np.ones((lidar_pts.shape[0], 1))], axis=1)
             lidar2ego = info['lidar2ego']
 
@@ -185,10 +183,7 @@ if __name__ == '__main__':
     pbar = accelerate_tqdm(total=len(total_cams), ncols=120, desc="Generating dense depths")
     with distributed_state.split_between_processes(total_cams) as partial_frames:
         for cam_info in partial_frames:
-            image_path = os.path.join(
-                video_scene.raw_image_path,
-                cam_info['data_path']
-            )
+            image_path = video_scene.runtime_image_path(cam_info['data_path'])
             image = Image.open(image_path)
             rgb = np.array(image)
             raw_height, raw_width = rgb.shape[:2]
